@@ -12,15 +12,11 @@ class controlCurves():
                  shape='acme',
                  rotate=[0, 0, 0],
                  scale=['1', '1', '1'],
-                 # TODO
-                 childOf = [],
-                 joints = ['C_object01_JNT', 'C_object2_JNT'],
-                 parentOrConst='Const',
-                 parentConstTransform=True,
-                 parentConstsetRotation=True,
+                 childOf = 'C_object01_JNT',
+                 parentOrConst='parent',
+                 parentConstTransform=False,
+                 parentConstsetRotation=False,
                  adjGrpNumber=2,
-                 # TODO
-                 # ControlChain = False
                  # TODO sub controls
                  # subControl=False,
                  # subScale = [.8, .8, .8],
@@ -47,8 +43,8 @@ class controlCurves():
         self.side = side
         self.shape = shape
         self.scale = scale
-        self.jointList = joints
-        # self.parentConstraint = parentConstraint
+        self.childOf = childOf
+        self.parentOrConst = parentOrConst
         self.maintainTransform = parentConstTransform
         self.maintainRotation = parentConstsetRotation
         self.rotate = rotate
@@ -110,7 +106,7 @@ class controlCurves():
         self.__create()
 
     def __initialSetup(self):
-        for i in self.jointList:
+        for i in self.childOf:
             # setup Var
             self.joint = i
             # self.iterCounts += 1
@@ -442,31 +438,33 @@ class controlCurves():
             grp = pm.group(MainControlCrv, n=name+ "_" + 'Adj' + str(i) + '_GRP')
             adjGrps.append(grp)
         # find matrix of joints and set it on the frist dag group
-        jnt = pm.PyNode(self.jointList[0])
+        jnt = pm.PyNode(self.childOf)
         jntMatrix = jnt.getMatrix()
         mainGrpName.setMatrix(jntMatrix)
         # END OF adj/buffer groups
 
         # TODO : make sub controls
         # --- creating sub adj/buffer groups
-
         # END OF sub adj/buffer groups
 
-        # --- parent Constraints
-        if self.maintainTransform and self.maintainRotation:
-            bah = pm.parentConstraint(MainControlCrv, self.jointList, mo=False, n=self.fullName+'Const')
+        if self.parentOrConst == 'parent' or 'Parent':
+            pm.parent(MainControlCrv, self.childOf)
 
-        elif self.maintainTransform is True and self.maintainRotation is False:
-            bah = pm.parentConstraint(MainControlCrv, self.jointList, mo=False,
-                                        skipRotate=['x', 'y', 'z'], n=self.fullName+'TransConst')
+        elif self.parentOrConst == 'const' or 'Const' or 'Constraint' or 'constraint':
+            # --- if parent  = Constraints
+            if self.maintainTransform and self.maintainRotation:
+                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False, n=self.fullName+'Const')
 
-        elif self.maintainTransform is False and self.maintainRotation is True:
-            bah = pm.parentConstraint(MainControlCrv, self.jointList, mo=False,
-                                        skipTranslate=['x', 'y', 'z'], n=self.fullName+'RotConst')
-        # End of  parent Constraints
+            elif self.maintainTransform is True and self.maintainRotation is False:
+                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False,
+                                            skipRotate=['x', 'y', 'z'], n=self.fullName+'TransConst')
+
+            elif self.maintainTransform is False and self.maintainRotation is True:
+                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False,
+                                            skipTranslate=['x', 'y', 'z'], n=self.fullName+'RotConst')
+            # End of  parent Constraints
 
         # --- move the shape of the controls
-        # TODO make convert this to pymel but still works with this moduel
         for i in MainControlCrv.getShapes():
             a = str(i.getName())
             spans = pm.getAttr(i + '.spans')

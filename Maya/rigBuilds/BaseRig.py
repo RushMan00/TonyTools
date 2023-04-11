@@ -1,7 +1,9 @@
 import maya.cmds as cmds
+import importlib as imp
 import pymel.core as pm
 from rigBuilds import ControlCurves
-reload(ControlCurves)
+
+imp.reload(ControlCurves)
 
 class baseRig():
     def __init__(self,
@@ -60,9 +62,8 @@ class baseRig():
                                                     shape='acme',
                                                     rotate=[0, 0, 0],
                                                     scale=['1', '1', '1'],
-                                                    joints=[],
-                                                    parentConstTransform=False,
-                                                    parentConstsetRotation=True,
+                                                    childOf=bah[num],
+                                                    parentOrConst='parent',
                                                     adjGrpNumber=1,
                                                     )
                     else:
