@@ -11,7 +11,7 @@ class baseRig():
                  size=1,
                  children=['GEO','RIG','SKELE'],
                  nestingGrp={
-                             'RIG' : ['C_main_GRP','C_global_GRP', 'C_globalBuffer_GRP','C_global_CTL', 'C_globalGimbal_CTL'],
+                             'RIG' : ['C_main_GRP','C_global_GRP','C_global_CTL', 'C_globalGimbal_CTL'],
                              'GEO' : ['C_main1_GRP', 'C_mainBuffer0_GRP' ],
                              'SKELE' : ['C_main2_GRP','C_mainBuffer2_GRP' ]
                              },
@@ -41,34 +41,36 @@ class baseRig():
 
     def __createStructure(self):
         # create the main group
-        mainGrp = pm.group(em=True, n=self.fullName)
-
+        mainGrp = pm.group(em=True, n=self.name)
         # create the child groups
         for stuff in self.children:
             grp = pm.group(em=True, n=stuff, p=mainGrp)
 
         # get values and make them in to groups
         for key, val in self.nestingGrp.items():
-            bah = []
+            nextList = []
             num = 0
             for lst in val:
                 if lst == val[0]:
                         pm.group(em=True, n=lst, p=key)
-                        bah.append(lst)
+                        nextList.append(lst)
                 else:
                     if "CTL" in lst:
-                        ControlCurves.controlCurves(name=lst,
-                                                    side='C',
-                                                    shape='acme',
-                                                    rotate=[0, 0, 0],
-                                                    scale=['1', '1', '1'],
-                                                    childOf=bah[num],
-                                                    parentOrConst='parent',
-                                                    adjGrpNumber=1,
-                                                    )
+                        # fix this
+                        val = lst.replace('C_', '').replace('_CTL', '')
+                        stuff = ControlCurves.controlCurves(name=val,
+                                                            side='C',
+                                                            shape='acme',
+                                                            rotate=[0, 0, 0],
+                                                            scale=['1', '1', '1'],
+                                                            childOf=nextList[num],
+                                                            parentOrConst='parent',
+                                                            adjGrpNumber=1,
+                                                            )
+                        print(stuff)
                     else:
-                        pm.group(em=True, n=lst, p=bah[num])
-                        bah.append(lst)
+                        pm.group(em=True, n=lst, p=nextList[num])
+                        nextList.append(lst)
                         num += 1
 
     # Exacute process

@@ -9,5 +9,5 @@ def load_ma_file(filepath):
         pm.importFile(filepath, type="mayaAscii", ignoreVersion=True)
         return True
     except:
-        pm.warning("Failed to load file: {}".format(filepath))
+        pm.warning("Failed to load file or path is not existing: {}".format(filepath))
         return False
