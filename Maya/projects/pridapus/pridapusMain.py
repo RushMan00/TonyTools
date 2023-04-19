@@ -13,13 +13,7 @@ def loadModel():
     # End of load model
 
     # load setup base
-    BaseRig.baseRig(name='pridapus',
-                    size=1,
-                    children=['GEO', 'RIG', 'SKELE'],
-                    nestingGrp={'RIG': ['C_main_GRP','C_global_GRP', 'C_globalBuffer_GRP','C_global_CTL', 'C_globalGimbal_CTL'],
-                                'GEO': ['C_main1_GRP', 'C_mainBuffer0_GRP'],
-                                'SKELE': ['C_main2_GRP','C_mainBuffer2_GRP']},
-                    )
+    BaseRig.baseRig(name='pridapus', size=5)
     # End of load model
 
 # def createGuildes():

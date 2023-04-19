@@ -12,10 +12,8 @@ class controlCurves():
                  shape='acme',
                  rotate=[0, 0, 0],
                  scale=['1', '1', '1'],
-                 childOf = 'C_object01_JNT',
+                 parent=['C_object01_JNT'],
                  parentOrConst='parent',
-                 parentConstTransform=False,
-                 parentConstsetRotation=False,
                  adjGrpNumber=2,
                  # TODO sub controls
                  # subControl=False,
@@ -33,8 +31,8 @@ class controlCurves():
         Version        beta 1.0.0
 
         Name            :   Name the main control
-        side
-        setTransform    :   to set the world position of from joints
+        side            :   Pass the sting like 'C' must be a sting and single or double letter
+        shape           :   to set the shape of the object
         setRotation     :   to set the Rotation base on joint rotation
 
         '''
@@ -43,10 +41,8 @@ class controlCurves():
         self.side = side
         self.shape = shape
         self.scale = scale
-        self.childOf = childOf
+        self.parents = parent
         self.parentOrConst = parentOrConst
-        self.maintainTransform = parentConstTransform
-        self.maintainRotation = parentConstsetRotation
         self.rotate = rotate
         self.adjGrpNumber = adjGrpNumber
 
@@ -95,10 +91,10 @@ class controlCurves():
         self.controlNode = None
         self.controlNames = None
         self.grpLst = []
-        self.counts = 0
         self.innerCountShape = 0
         self.controlAndGrpLstNames = []
         self.crvShapeNames = []
+        self.adjGrps = []
         # self.trans = pm.xform(self.joints, q=1, ws=1, rp=1)
         # self.rot = pm.xform(self.joints, q=1, ws=1, ro=1)
 
@@ -106,7 +102,7 @@ class controlCurves():
         self.__create()
 
     def __initialSetup(self):
-        for i in self.childOf:
+        for i in self.parents:
             # setup Var
             self.joint = i
             # self.iterCounts += 1
@@ -223,7 +219,7 @@ class controlCurves():
                                           (-0.7071066498756409, -0.5400000214576721, -0.70710688829422),
                                           (0.7071067690849304, -0.5400000214576721, -0.7071067690849304),
                                           (0.0, 0.5400000214576721, 0.0),
-                                          (0.7071067094802856, -0.5400000214576721, 0.7071068286895752),git
+                                          (0.7071067094802856, -0.5400000214576721, 0.7071068286895752),
                                           (0.7071067690849304, -0.5400000214576721, -0.7071067690849304),
                                           (0.0, 0.5400000214576721, 0.0),
                                           (-0.7071068286895752, -0.5400000214576721, 0.7071067094802856),
@@ -433,12 +429,12 @@ class controlCurves():
 
         # --- creating adj/buffer groups
         mainGrpName = pm.group(MainControlCrv, n=name + '_GRP')
-        adjGrps = []
+        # self.adjGrps = []
         for i in range(self.adjGrpNumber):
             grp = pm.group(MainControlCrv, n=name+ "_" + 'Adj' + str(i) + '_GRP')
-            adjGrps.append(grp)
+            self.adjGrps.append(grp)
         # find matrix of joints and set it on the frist dag group
-        jnt = pm.PyNode(self.childOf)
+        jnt = pm.PyNode(self.parents[0])
         jntMatrix = jnt.getMatrix()
         mainGrpName.setMatrix(jntMatrix)
         # END OF adj/buffer groups
@@ -448,21 +444,12 @@ class controlCurves():
         # END OF sub adj/buffer groups
 
         if self.parentOrConst == 'parent' or 'Parent':
-            pm.parent(MainControlCrv, self.childOf)
+            pm.parent(MainControlCrv, self.parents[0])
 
-        elif self.parentOrConst == 'const' or 'Const' or 'Constraint' or 'constraint':
-            # --- if parent  = Constraints
-            if self.maintainTransform and self.maintainRotation:
-                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False, n=self.fullName+'Const')
-
-            elif self.maintainTransform is True and self.maintainRotation is False:
-                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False,
-                                            skipRotate=['x', 'y', 'z'], n=self.fullName+'TransConst')
-
-            elif self.maintainTransform is False and self.maintainRotation is True:
-                bah = pm.parentConstraint(MainControlCrv, self.childOf, mo=False,
-                                            skipTranslate=['x', 'y', 'z'], n=self.fullName+'RotConst')
+        elif self.parentOrConst == 'const':
+            bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
             # End of  parent Constraints
+
 
         # --- move the shape of the controls
         for i in MainControlCrv.getShapes():
@@ -480,11 +467,16 @@ class controlCurves():
 
         # End of setting shape of controls
 
+    def __return_objects(self):
+        bah = self.controlNames
+        return bah
+
     # Exacute process
     def __create(self):
         # Step 1
         self.__initialSetup()
         self.__createGrpsandSubGrps()
+        self.__return_objects()
         # self.__controlAdj()
         # if self.subControl:
         #     self.__createSubControls()

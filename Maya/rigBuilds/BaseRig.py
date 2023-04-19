@@ -67,7 +67,8 @@ class baseRig():
                                                             parentOrConst='parent',
                                                             adjGrpNumber=1,
                                                             )
-                        print(stuff)
+                        nextList.append(lst)
+                        num += 1
                     else:
                         pm.group(em=True, n=lst, p=nextList[num])
                         nextList.append(lst)
