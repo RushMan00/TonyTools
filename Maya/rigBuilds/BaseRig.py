@@ -63,7 +63,7 @@ class baseRig():
                                                             shape='acme',
                                                             rotate=[0, 0, 0],
                                                             scale=['1', '1', '1'],
-                                                            childOf=nextList[num],
+                                                            parent=[nextList[num]],
                                                             parentOrConst='parent',
                                                             adjGrpNumber=1,
                                                             )

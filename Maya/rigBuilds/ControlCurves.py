@@ -15,6 +15,7 @@ class controlCurves():
                  parent=['C_object01_JNT'],
                  parentOrConst='parent',
                  adjGrpNumber=2,
+                 hook = None
                  # TODO sub controls
                  # subControl=False,
                  # subScale = [.8, .8, .8],
@@ -45,6 +46,7 @@ class controlCurves():
         self.parentOrConst = parentOrConst
         self.rotate = rotate
         self.adjGrpNumber = adjGrpNumber
+        self.hook = hook
 
         # TODO Create SubControls
         # self.subControl = subControl
@@ -90,7 +92,7 @@ class controlCurves():
         self.finalFullName = None
         self.controlNode = None
         self.controlNames = None
-        self.grpLst = []
+        self.finishedGrpLst = []
         self.innerCountShape = 0
         self.controlAndGrpLstNames = []
         self.crvShapeNames = []
@@ -429,10 +431,10 @@ class controlCurves():
 
         # --- creating adj/buffer groups
         mainGrpName = pm.group(MainControlCrv, n=name + '_GRP')
-        # self.adjGrps = []
+        self.finishedGrpLst.append(mainGrpName)
         for i in range(self.adjGrpNumber):
             grp = pm.group(MainControlCrv, n=name+ "_" + 'Adj' + str(i) + '_GRP')
-            self.adjGrps.append(grp)
+            self.finishedGrpLst.append(grp)
         # find matrix of joints and set it on the frist dag group
         jnt = pm.PyNode(self.parents[0])
         jntMatrix = jnt.getMatrix()
@@ -443,8 +445,8 @@ class controlCurves():
         # --- creating sub adj/buffer groups
         # END OF sub adj/buffer groups
 
-        if self.parentOrConst == 'parent' or 'Parent':
-            pm.parent(MainControlCrv, self.parents[0])
+        if self.parentOrConst == 'parent':
+            pm.parent(self.parents, MainControlCrv)
 
         elif self.parentOrConst == 'const':
             bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
@@ -468,8 +470,9 @@ class controlCurves():
         # End of setting shape of controls
 
     def __return_objects(self):
-        bah = self.controlNames
-        return bah
+        pass
+        # theList = self.finishedGrpLst + self.controlNames
+        # return theList
 
     # Exacute process
     def __create(self):
