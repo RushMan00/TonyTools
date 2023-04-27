@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import pymel.core as pm
+from rigBuilds import attribute
 import logging
 
 # Create a logger
@@ -7,15 +8,17 @@ _logger = logging.getLogger(__name__)
 
 class controlCurves():
     def __init__(self,
-                 name='ACME',
                  side='C',
+                 name='ACME',
+                 num=0,
                  shape='acme',
                  rotate=[0, 0, 0],
-                 scale=['1', '1', '1'],
+                 scale=1,
                  parent=['C_object01_JNT'],
                  parentOrConst='parent',
                  adjGrpNumber=2,
-                 hook = None
+                 hook = None,
+                 tag = True,
                  # TODO sub controls
                  # subControl=False,
                  # subScale = [.8, .8, .8],
@@ -34,12 +37,13 @@ class controlCurves():
         Name            :   Name the main control
         side            :   Pass the sting like 'C' must be a sting and single or double letter
         shape           :   to set the shape of the object
-        setRotation     :   to set the Rotation base on joint rotation
+        rotation        :   to set the Rotation base on joint rotation
 
         '''
 
         self.name = name
         self.side = side
+        self.iterCounts = num
         self.shape = shape
         self.scale = scale
         self.parents = parent
@@ -47,6 +51,7 @@ class controlCurves():
         self.rotate = rotate
         self.adjGrpNumber = adjGrpNumber
         self.hook = hook
+        self.tag = tag
 
         # TODO Create SubControls
         # self.subControl = subControl
@@ -87,8 +92,6 @@ class controlCurves():
         self.fullName = side + '_' + name
         # ex C_nameSub0
         self.subFullName =side + '_' + name + self.SUB
-        # iteration of joints
-        self.iterCounts = 0
         self.finalFullName = None
         self.controlNode = None
         self.controlNames = None
@@ -97,6 +100,7 @@ class controlCurves():
         self.controlAndGrpLstNames = []
         self.crvShapeNames = []
         self.adjGrps = []
+        # self.theList
         # self.trans = pm.xform(self.joints, q=1, ws=1, rp=1)
         # self.rot = pm.xform(self.joints, q=1, ws=1, ro=1)
 
@@ -435,15 +439,13 @@ class controlCurves():
         for i in range(self.adjGrpNumber):
             grp = pm.group(MainControlCrv, n=name+ "_" + 'Adj' + str(i) + '_GRP')
             self.finishedGrpLst.append(grp)
-        # find matrix of joints and set it on the frist dag group
-        jnt = pm.PyNode(self.parents[0])
-        jntMatrix = jnt.getMatrix()
-        mainGrpName.setMatrix(jntMatrix)
-        # END OF adj/buffer groups
+        self.finishedGrpLst.append(MainControlCrv)
 
-        # TODO : make sub controls
-        # --- creating sub adj/buffer groups
-        # END OF sub adj/buffer groups
+        # find matrix of joints and set it on the frist dag group
+        parent = pm.PyNode(self.parents[0])
+        parentMatrix = parent.getMatrix()
+        mainGrpName.setMatrix(parentMatrix)
+        # END OF adj/buffer groups
 
         if self.parentOrConst == 'parent':
             pm.parent(self.parents, MainControlCrv)
@@ -452,34 +454,60 @@ class controlCurves():
             bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
             # End of  parent Constraints
 
+        # TODO : make sub controls
+        # --- creating sub adj/buffer groups
+        # END OF sub adj/buffer groups
 
         # --- move the shape of the controls
         for i in MainControlCrv.getShapes():
             a = str(i.getName())
             spans = pm.getAttr(i + '.spans')
-            foo = pm.ls(i + '.cv[0:%s]' % spans, fl=True)
+            allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
             """
-            to scale curve without effecting int of scale attrs
-            how it works: grab all the verties and scaling/rotating it togetehr
+            to scale curve without effecting scale xyz attrs
+            how it works: grab all the verties and scaling/rotating it together
             """
-            # cmds.setAttr(self.controlNames + '.t', self.trans[0], self.trans[1], self.trans[2])
-            # cmds.setAttr(self.controlNames + '.r', self.rot[0], self.rot[1], self.rot[2])
-            pm.scale(self.scale[0], self.scale[1], self.scale[2], foo, a=True, ws=True)
-            pm.rotate(self.rotate[0], self.rotate[1], self.rotate[2], i + '.cv[0:%s]' % spans)
+            # # pymel dont work? Find out why
+            # # scaling the shape
+            # pm.scale(self.scale, self.scale, self.scale, allSpans, a=True, ws=True)
+            # # rotating the shape
+            # pm.rotate(self.rotate[0], self.rotate[1], self.rotate[2], i + '.cv[0:%s]' % allSpans)
 
-        # End of setting shape of controls
+            # for now this works
+            # scaling the shape
+            cmds.scale(self.scale, self.scale, self.scale, allSpans, r=True)
+            # rotating the shape
+            cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], i + '.cv[0:%s]' % len(allSpans))
 
-    def __return_objects(self):
-        pass
-        # theList = self.finishedGrpLst + self.controlNames
-        # return theList
+        # --- self.hook
+        if self.hook:
+            pm.parent( self.finishedGrpLst[0], self.hook)
+
+        # --- self.tag
+        if self.tag:
+            attribute.createTags(node=MainControlCrv, tagName='type', tagValue='CNT')
+
+    # --- just get the Get pyNodes and Strings
+    def __str__(self):
+        return [obj.name() for obj in self.finishedGrpLst][-1]
+
+    def __repr__(self):
+        return self.finishedGrpLst[-1]
+
+    # --- Get pyNodes and Strings
+    def getInstancesList(self):
+        return [obj.name() for obj in self.finishedGrpLst]
+
+    def getPmInstancesList(self):
+        return self.finishedGrpLst
 
     # Exacute process
     def __create(self):
-        # Step 1
+        # Steps
         self.__initialSetup()
         self.__createGrpsandSubGrps()
-        self.__return_objects()
+
+        # self.__return_objects()
         # self.__controlAdj()
         # if self.subControl:
         #     self.__createSubControls()
