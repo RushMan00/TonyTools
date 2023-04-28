@@ -446,13 +446,15 @@ class controlCurves():
         parentMatrix = parent.getMatrix()
         mainGrpName.setMatrix(parentMatrix)
         # END OF adj/buffer groups
+        if self.parentOrConst:
+            if self.parentOrConst == 'parent':
+                pm.parent(self.parents, MainControlCrv)
 
-        if self.parentOrConst == 'parent':
-            pm.parent(self.parents, MainControlCrv)
-
-        elif self.parentOrConst == 'const':
-            bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
-            # End of  parent Constraints
+            elif self.parentOrConst == 'const':
+                bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
+                # End of  parent Constraints
+        else:
+            pass
 
         # TODO : make sub controls
         # --- creating sub adj/buffer groups
