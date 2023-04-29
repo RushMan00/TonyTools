@@ -10,9 +10,9 @@ class baseRig():
                  name='Base',
                  size=1,
                  groups={
-                         'RIG' : ['C_main_GRP','C_global_CTL', 'C_globalGimbal_CTL','C_local_GRP'],
-                         'GEO' : ['C_main1_GRP', 'C_mainBuffer0_GRP' ],
-                         'SKELE' : ['C_main2_GRP','C_mainBuffer2_GRP' ]
+                         'RIG': ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP'],
+                         'GEO': ['C_main1_GRP', 'C_mainBuffer0_GRP'],
+                         'SKELE': ['C_main2_GRP', 'C_mainBuffer2_GRP']
                          },
                 # TODO
                 #  colour: 1,
@@ -35,6 +35,8 @@ class baseRig():
         self.__create()
 
     # def __instancecheck__(self, instance):
+    #     if pm.objExist(self.name):
+    #         logging.warning(self.finalFullName + "same name exists in scene.")
 
     def __createStructure(self):
         # create the main group

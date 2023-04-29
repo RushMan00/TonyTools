@@ -3,7 +3,7 @@ import pymel.core as pm
 from rigBuilds import attribute
 import logging
 
-# Create a logger
+
 _logger = logging.getLogger(__name__)
 
 class controlCurves():
