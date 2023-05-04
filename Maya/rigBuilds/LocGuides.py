@@ -44,9 +44,9 @@ class locGuides():
         # check if a locator with the same name already exists in the scene
         loc_name = '{}_{}_'.format(self.side, self.name)
         for i in range(self.numberOfGuides):
-            if pm.objExists(loc_name + str(i) + '_LOC'):
+            if pm.objExists(loc_name + str(i) + self.prefixName):
                 pm.warning('A guide locator with the name {} already exists in the scene.'.format(
-                    loc_name + str(i) + '_LOC'))
+                    loc_name + str(i) + self.prefixName))
                 return
 
         # if no duplicate locator names are found, create the main guide group
@@ -89,7 +89,7 @@ class locGuides():
         for num in range(self.numberOfGuides):
             # crate locator
             name = self.side + '_' + self.name + str(num) + '_'
-            mainLoc = pm.spaceLocator(n=name+'LOC')
+            mainLoc = pm.spaceLocator(n=name+self.prefixName)
             self.locList.append(mainLoc)
             locIter.append(mainLoc)
             pm.parent(mainLoc, self.chainList[-1])
@@ -110,10 +110,6 @@ class locGuides():
             # create tags on locator and joints on locators
             if self.tags:
                 pass
-
-            # if self.mirror:
-            #     self.__createMirrorSetup()
-
         # end of Loop
 
         # move locators for better selection in the world, more for UX in the scene
@@ -132,19 +128,46 @@ class locGuides():
         # Create the mirrored structure
         self.__createStructure()
 
-        # # Calculate the mirrored positions
-        # mirrored_positions = [pm.datatypes.Vector(-pos.x, pos.y, pos.z) for pos in original_positions]
-        #
-        # # Move the mirrored locators to the mirrored positions
-        # for loc, pos in zip(self.locList[-len(mirrored_positions):], mirrored_positions):
-        #     loc.setTranslation(pos, space='world')
-        #
-        # # Reset the side back to the original side
-        # self.side = original_side
+        # sort for L and right put it in different vars
+        left = []
+        right = []
+        for word in self.locList:
+            if "L" in word.name():
+                left.append(word)
+            elif "R" in word.name():
+                right.append(word)
 
-            # if mirror - crate the mirror
+        # create node
+        pma = pm.createNode('plusMinusAverage', n=self.name+'_transform_Guides'+'_PMA')
+        # connect node from left to right XYZ mirrored
+        # x
 
-            # if mirror rotation - mirror the rotation
+        for l, r, in zip(left, right):
+
+            l.tx >> pma.input1D[0]
+            l.tx // pma.input1D[0]
+            l.tx >> pma.input1D[1]
+            pma.operation.set(2)
+            pma.input1D[0].set(0)
+            pma.output1D >> r.tx
+            # y and z
+            l.ty >> r.ty
+            l.tz >> r.tz
+
+            if self.mirrorRotatoin:
+                for i in ['rx', 'ry', 'rz']:
+                    pma = pm.createNode('plusMinusAverage', n=self.name + '_' + i + '_Guides' + '_PMA')
+                    pma.operation.set(2)
+                    pm.connectAttr(getattr(l, i), pma.input1D[0], force=True)
+                    pm.disconnectAttr(getattr(l, i), pma.input1D[0])
+                    pm.connectAttr(getattr(l, i), pma.input1D[1], force=True)
+                    pma.input1D[0].set(0)
+                    pm.connectAttr(pma.output1D, getattr(r, i), force=True)
+
+                else:
+                    l.rx >> r.rx
+                    l.ry >> r.ry
+                    l.rz >> r.rz
 
             # if tags the guides and the joints
 
