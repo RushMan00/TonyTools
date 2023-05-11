@@ -32,13 +32,16 @@ class locGuides():
         self.mirrorRotatoin = mirrorRotatoin
 
         self.prefixName = 'GDE'
-        self.tags=True
+        self.tags = True
         #Vars
         self.mainGrp = None
         self.chainList = []
         self.locList = []
+        self.guideList = []
 
-        self.__create()
+        # self.__create()
+        # initate
+        self.__check()
 
     def __check(self):
         # check if a locator with the same name already exists in the scene
@@ -118,12 +121,12 @@ class locGuides():
 
     def __createMirrorSetup(self):
         # Save the original side for later use
-        original_side = self.side
+        originalSide = self.side
         # Determine the mirror side
-        mirror_side = 'L' if original_side == 'R' else 'R'
-        self.side = mirror_side
-        color_side = 4 if original_side == 'R' else 6
-        self.color = color_side
+        mirrorSide = 'L' if originalSide == 'R' else 'R'
+        self.side = mirrorSide
+        mirrorSide = 4 if originalSide == 'R' else 6
+        self.color = mirrorSide
 
         # Create the mirrored structure
         self.__createStructure()
@@ -137,42 +140,39 @@ class locGuides():
             elif "R" in word.name():
                 right.append(word)
 
-        # create node
-        pma = pm.createNode('plusMinusAverage', n=self.name+'_transform_Guides'+'_PMA')
         # connect node from left to right XYZ mirrored
-        # x
-
-        for l, r, in zip(left, right):
-
-            l.tx >> pma.input1D[0]
-            l.tx // pma.input1D[0]
-            l.tx >> pma.input1D[1]
+        for ct, (lft, rgt), in enumerate(zip(left, right)):
+            pma = pm.createNode('plusMinusAverage', n=self.name + '_transform_Guides%s_PMA' % ct)
+            lft.tx >> pma.input1D[0]
+            lft.tx // pma.input1D[0]
+            lft.tx >> pma.input1D[1]
             pma.operation.set(2)
             pma.input1D[0].set(0)
-            pma.output1D >> r.tx
+            pma.output1D >> rgt.tx
             # y and z
-            l.ty >> r.ty
-            l.tz >> r.tz
+            lft.ty >> rgt.ty
+            lft.tz >> rgt.tz
 
             if self.mirrorRotatoin:
                 for i in ['rx', 'ry', 'rz']:
-                    pma = pm.createNode('plusMinusAverage', n=self.name + '_' + i + '_Guides' + '_PMA')
+                    pma = pm.createNode('plusMinusAverage', n=self.name + '{}_Guides{}_PMA'.format(i,ct))
                     pma.operation.set(2)
-                    pm.connectAttr(getattr(l, i), pma.input1D[0], force=True)
-                    pm.disconnectAttr(getattr(l, i), pma.input1D[0])
-                    pm.connectAttr(getattr(l, i), pma.input1D[1], force=True)
+                    pm.connectAttr(getattr(lft, i), pma.input1D[0], force=True)
+                    pm.disconnectAttr(getattr(lft, i), pma.input1D[0])
+                    pm.connectAttr(getattr(lft, i), pma.input1D[1], force=True)
                     pma.input1D[0].set(0)
-                    pm.connectAttr(pma.output1D, getattr(r, i), force=True)
+                    pm.connectAttr(pma.output1D, getattr(rgt, i), force=True)
+            else:
+                lft.rx >> rgt.rx
+                lft.ry >> rgt.ry
+                lft.rz >> rgt.rz
 
-                else:
-                    l.rx >> r.rx
-                    l.ry >> r.ry
-                    l.rz >> r.rz
+        # tag locators
+        for llst in self.locList:
+            attribute.createTags(node=llst, tagName='locator', tagValue='LOC')
 
-            # if tags the guides and the joints
-
-    def __create(self):
-        self. __check()
+    # def __create(self):
+    #     self. __check()
 
 
 
