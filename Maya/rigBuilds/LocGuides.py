@@ -171,9 +171,6 @@ class locGuides():
         for llst in self.locList:
             attribute.createTags(node=llst, tagName='locator', tagValue='LOC')
 
-    # def __create(self):
-    #     self. __check()
-
 
 
 
