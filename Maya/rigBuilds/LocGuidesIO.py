@@ -1,5 +1,7 @@
 import maya.cmds as cmds
 import pymel.core as pm
+import json
+import os
 
 def selectTaggedNodes(tagName='myTag'):
     # list all objects with the specified tag attribute
@@ -14,25 +16,50 @@ def selectTaggedNodes(tagName='myTag'):
         # pm.select(taggedObjs)
         return taggedObjs
 
-def writeLocGuidesData(node='node', filePath = '\something'):
+def writeLocGuidesData(tagName='node', filePath = '\something'):
     # find the LocGuides in the scene
-    locs = selectTaggedNodes(tagName=node)
-    # read and store data in vars tx ty tz, rx ry rz
+    locs = selectTaggedNodes(tagName=tagName)
+    if not locs:
+        return
+    dataList = []
+
     for obj in locs:
-        translation = obj.getTranslation()
-        rotation = obj.getRotation()
+        dataDict = {}
+        dataDict[obj.name()] = {
+                                "tx": obj.tx.get(),
+                                "ty": obj.ty.get(),
+                                "tz": obj.tz.get(),
+                                "rx": obj.rx.get(),
+                                "ry": obj.ry.get(),
+                                "rz": obj.rz.get()
+                                }
+        dataList.append(dataDict)
+    print(dataList)
 
-        print(obj.name())
-        print('translation', translation)
-        print('rotation', rotation)
-
+    # Check if the directory exists
+    filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
+    directory = os.path.dirname(filePath)
+    if not os.path.exists(directory):
+        pm.warning(f"The directory {directory} does not exist.")
         return
 
-    # store the data in to Jason file under the chosen paths
-    return
+    filePath = os.path.join(directory, 'locGuideData.json')
 
-def loadLocGuidesData(node='node', filePath = '\something'):
-    # find the path of the data
-    # find the LocGuides in the scene
-    # load in the data with the names
-    pass
+    # Save data to JSON filex
+    with open(filePath, 'w') as json_file:
+        json.dump(dataList, json_file, indent=4)
+
+    return dataList
+
+def loadLocGuidesData(filePath='\something'):
+    filePath = filePath.replace("\\", "/")
+    filePath = os.path.join(filePath, 'locGuideData.json')
+
+    if not os.path.exists(filePath):
+        pm.warning(f"The file {filePath} does not exist.")
+        return
+
+    with open(filePath, 'r') as json_file:
+        data = json.load(json_file)
+
+    return data
