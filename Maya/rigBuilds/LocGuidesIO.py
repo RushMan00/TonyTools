@@ -16,7 +16,7 @@ def selectTaggedNodes(tagName='myTag'):
         # pm.select(taggedObjs)
         return taggedObjs
 
-def writeLocGuidesData(tagName='node', filePath = '\something'):
+def writeLocGuidesData(tagName='node', filePath='\TonyTools\Maya\projects\pridapus\data'):
     # find the LocGuides in the scene
     locs = selectTaggedNodes(tagName=tagName)
     if not locs:
@@ -38,21 +38,19 @@ def writeLocGuidesData(tagName='node', filePath = '\something'):
 
     # Check if the directory exists
     filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
-    directory = os.path.dirname(filePath)
-    if not os.path.exists(directory):
-        pm.warning(f"The directory {directory} does not exist.")
+    if not os.path.exists(filePath):
+        pm.warning(f"The directory {filePath} does not exist.")
         return
 
-    filePath = os.path.join(directory, 'locGuideData.json')
-
-    # Save data to JSON filex
+    # Save data to JSON file
+    filePath = os.path.join(filePath, 'locGuideData.json')
     with open(filePath, 'w') as json_file:
         json.dump(dataList, json_file, indent=4)
 
     return dataList
 
-def loadLocGuidesData(filePath='\something'):
-    filePath = filePath.replace("\\", "/")
+def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
+    filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
     filePath = os.path.join(filePath, 'locGuideData.json')
 
     if not os.path.exists(filePath):
@@ -60,6 +58,22 @@ def loadLocGuidesData(filePath='\something'):
         return
 
     with open(filePath, 'r') as json_file:
-        data = json.load(json_file)
+        dataList = json.load(json_file)
 
-    return data
+        for num, data in enumerate(dataList):
+            for nodeName, attrs in data.items():
+                print(nodeName)
+                # convert nodeName string to PyNode
+                node = pm.PyNode(nodeName)
+                for axis, val in attrs.items():
+                    print(axis, val)
+                    if node.attr(axis).isLocked():
+                        print(f"The attribute {nodeName}.{axis} is locked.")
+                        continue
+                    else:
+                        try:
+                            pm.setAttr('{}.{}'.format(nodeName, axis), val)
+                        except RuntimeError:
+                            print(
+                                f"Could not set value for attribute {nodeName}.{axis}. It may be connected to another attribute.")
+            return dataList

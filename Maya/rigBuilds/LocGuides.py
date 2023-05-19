@@ -3,7 +3,7 @@ import pymel.core as pm
 from rigBuilds import attribute
 
 """
-this is to create anything invoing with the guides
+this is to create anything invoing with the locGuides
 """
 
 class locGuides():
@@ -33,6 +33,7 @@ class locGuides():
 
         self.prefixName = 'GDE'
         self.tags = True
+
         #Vars
         self.mainGrp = None
         self.chainList = []
@@ -88,11 +89,12 @@ class locGuides():
 
     def __createStructure(self):
         locIter=[]
-        # number of guides = number of structure
+        # number of locGuides = number of structure
         for num in range(self.numberOfGuides):
             # crate locator
             name = self.side + '_' + self.name + str(num) + '_'
             mainLoc = pm.spaceLocator(n=name+self.prefixName)
+            attribute.createTags(node=mainLoc, tagName='locator', tagValue='LOC')
             self.locList.append(mainLoc)
             locIter.append(mainLoc)
             pm.parent(mainLoc, self.chainList[-1])
@@ -109,11 +111,6 @@ class locGuides():
 
             if self.asChain:
                 self.chainList.append(guideJnt)
-
-            # create tags on locator and joints on locators
-            if self.tags:
-                pass
-        # end of Loop
 
         # move locators for better selection in the world, more for UX in the scene
         for count, loc in enumerate(locIter):
@@ -166,11 +163,6 @@ class locGuides():
                 lft.rx >> rgt.rx
                 lft.ry >> rgt.ry
                 lft.rz >> rgt.rz
-
-        # tag locators
-        for llst in self.locList:
-            attribute.createTags(node=llst, tagName='locator', tagValue='LOC')
-
 
 
 
