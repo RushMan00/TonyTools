@@ -8,10 +8,11 @@ this is to create anything invoing with the locGuides
 
 class locGuides():
     def __init__(self,
-                 name='Base',
+                 name='spine',
                  side='C',
                  size=1,
-                 numberOfGuides=1,
+                 # numberOfGuides=1,
+                 guideList=['spine%s' % i for i in range(1)],
                  color=1,
                  asChain=True,
                  mirror = False,
@@ -25,7 +26,8 @@ class locGuides():
         self.name = name
         self.side = side.upper()
         self.size = size
-        self.numberOfGuides = numberOfGuides
+        # self.numberOfGuides = numberOfGuides
+        self.guideList = guideList
         self.color = color
         self.asChain = asChain
         self.mirror = mirror
@@ -38,7 +40,6 @@ class locGuides():
         self.mainGrp = None
         self.chainList = []
         self.locList = []
-        self.guideList = []
 
         # self.__create()
         # initate
@@ -47,8 +48,8 @@ class locGuides():
     def __check(self):
         # check if a locator with the same name already exists in the scene
         loc_name = '{}_{}_'.format(self.side, self.name)
-        for i in range(self.numberOfGuides):
-            if pm.objExists(loc_name + str(i) + self.prefixName):
+        for i in self.guideList:
+            if pm.objExists(i + self.prefixName):
                 pm.warning('A guide locator with the name {} already exists in the scene.'.format(
                     loc_name + str(i) + self.prefixName))
                 return
@@ -90,9 +91,9 @@ class locGuides():
     def __createStructure(self):
         locIter=[]
         # number of locGuides = number of structure
-        for num in range(self.numberOfGuides):
+        for num, guides in enumerate(self.guideList):
             # crate locator
-            name = self.side + '_' + self.name + str(num) + '_'
+            name = self.side + '_' + guides + '_'
             mainLoc = pm.spaceLocator(n=name+self.prefixName)
             attribute.createTags(node=mainLoc, tagName='locator', tagValue='LOC')
             self.locList.append(mainLoc)
@@ -163,8 +164,3 @@ class locGuides():
                 lft.rx >> rgt.rx
                 lft.ry >> rgt.ry
                 lft.rz >> rgt.rz
-
-
-
-
-

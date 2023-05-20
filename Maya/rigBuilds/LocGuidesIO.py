@@ -60,20 +60,20 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
     with open(filePath, 'r') as json_file:
         dataList = json.load(json_file)
 
-        for num, data in enumerate(dataList):
-            for nodeName, attrs in data.items():
-                print(nodeName)
-                # convert nodeName string to PyNode
-                node = pm.PyNode(nodeName)
-                for axis, val in attrs.items():
-                    print(axis, val)
-                    if node.attr(axis).isLocked():
-                        print(f"The attribute {nodeName}.{axis} is locked.")
-                        continue
-                    else:
-                        try:
-                            pm.setAttr('{}.{}'.format(nodeName, axis), val)
-                        except RuntimeError:
-                            print(
-                                f"Could not set value for attribute {nodeName}.{axis}. It may be connected to another attribute.")
-            return dataList
+    for num, data in enumerate(dataList):
+        for nodeName, attrs in data.items():
+            print(nodeName)
+            # convert nodeName string to PyNode
+            node = pm.PyNode(nodeName)
+            for axis, val in attrs.items():
+                # print(axis, val)
+                if node.attr(axis).isLocked():
+                    print(f"The attribute {nodeName}.{axis} is locked.")
+                    continue
+                else:
+                    try:
+                        pm.setAttr('{}.{}'.format(nodeName, axis), val)
+                    except RuntimeError:
+                        print(
+                            f"Could not set value for attribute {nodeName}.{axis}. It may be connected to another attribute.")
+    return dataList

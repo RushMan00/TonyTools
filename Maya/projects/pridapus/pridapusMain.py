@@ -1,21 +1,34 @@
 import pymel.core as pm
 import importlib as imp
-from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides
+from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides, attribute
+
 imp.reload(LoadMaFile)
 imp.reload(BaseRig)
 imp.reload(LocGuides)
 imp.reload(LocGuidesIO)
+imp.reload(attribute)
 
 # --- Backend
 paths = 'D:\OneDrive\TonyTools\Maya\projects\pridapus'
 
 def loadModel():
     # load setup base
-    BaseRig.baseRig(name='pridapus', size=5)
+    BaseRig.baseRig(name='pridapus',
+                    groups={
+                            'GEO': [],
+                            'RIG': ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP'],
+                            'SKELE': []
+                    },
+                    size=5)
     # load model
     mainPath = paths + '\model\pridapusMain.ma'
     LoadMaFile.load_ma_file(mainPath)
-    # End of load model
+    meshes = pm.ls(type='mesh')
+    # tag All Geos With Skin
+    for mesh in meshes:
+        attribute.createTags(node=mesh, tagName='skin', tagValue='skinweights')
+        pm.parent(mesh, 'GEO')
+    # end of loadModel
 
 def createGuildes():
     # --- create locGuides
@@ -23,7 +36,7 @@ def createGuildes():
                                 name='spine',
                                 side='C',
                                 size=1,
-                                numberOfGuides=5,
+                                guideList=['spine%s' % i for i in range(5)],
                                 color=None,
                                 asChain = False,
                                 )
@@ -32,7 +45,7 @@ def createGuildes():
                                 name='arm',
                                 side='L',
                                 size=1,
-                                numberOfGuides=3,
+                                guideList=['arm%s' % i for i in range(3)],
                                 color=None,
                                 asChain=False,
                                 mirror=True,
@@ -42,17 +55,16 @@ def createGuildes():
                                 name='leg',
                                 side='L',
                                 size=1,
-                                numberOfGuides=3,
+                                guideList=['leg%s' % i for i in range(3)],
                                 color=None,
                                 asChain=False,
                                 mirror=True,
                                 mirrorRotatoin=True,
                             )
 
-    # # load last saved guide data
-    # loaded = LocGuidesIO.loadLocGuidesData(filePath=paths + '\data\locGuides')
 def loadGuildes():
      loaded = LocGuidesIO.loadLocGuidesData(filePath=paths + '\data\locGuides')
+
 def saveGuildes():
     dataList = LocGuidesIO.writeLocGuidesData(tagName='locator', filePath=paths + '\data\locGuides')
 
