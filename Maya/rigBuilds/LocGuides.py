@@ -11,25 +11,20 @@ class locGuides():
                  name='spine',
                  side='C',
                  size=1,
-                 # numberOfGuides=1,
-                 guideList=['spine%s' % i for i in range(1)],
+                 nameList=['spine%s' % i for i in range(1)],
                  color=1,
-                 asChain=True,
                  mirror = False,
                  mirrorRotatoin = False,
                 # # TODO
                 #  upaxis:'y',
-                # asChain:True,
                 # parent:'C_joint1_JNT',
                  ):
 
         self.name = name
         self.side = side.upper()
         self.size = size
-        # self.numberOfGuides = numberOfGuides
-        self.guideList = guideList
+        self.guideList = nameList
         self.color = color
-        self.asChain = asChain
         self.mirror = mirror
         self.mirrorRotatoin = mirrorRotatoin
 
@@ -41,21 +36,20 @@ class locGuides():
         self.chainList = []
         self.locList = []
 
-        # self.__create()
         # initate
         self.__check()
 
     def __check(self):
         # check if a locator with the same name already exists in the scene
-        loc_name = '{}_{}_'.format(self.side, self.name)
-        for i in self.guideList:
-            if pm.objExists(i + self.prefixName):
+        for lst in self.guideList:
+            locName = '{}_{}_{}'.format(self.side, lst, self.prefixName)
+            if pm.objExists(locName):
                 pm.warning('A guide locator with the name {} already exists in the scene.'.format(
-                    loc_name + str(i) + self.prefixName))
+                    locName))
                 return
 
         # if no duplicate locator names are found, create the main guide group
-        self.mainGrp = pm.group(em=True, n='guide_{}_GRP'.format(self.name))
+        self.mainGrp = pm.group(em=True, n='locGuide_{}_GRP'.format(self.name))
         self.chainList.append(self.mainGrp)
         self.__checkingSides()
 
@@ -90,6 +84,8 @@ class locGuides():
 
     def __createStructure(self):
         locIter=[]
+        grpJntlist = []
+        grpJntlist.append(self.mainGrp)
         # number of locGuides = number of structure
         for num, guides in enumerate(self.guideList):
             # crate locator
@@ -100,7 +96,7 @@ class locGuides():
             locIter.append(mainLoc)
             pm.parent(mainLoc, self.chainList[-1])
 
-            # --- set colour
+            # set colour on locator
             mainLocShape = mainLoc.getShape()
             mainLocShape.overrideEnabled.set(1)
             mainLocShape.overrideColor.set(self.color)
@@ -108,10 +104,10 @@ class locGuides():
             # attach joint to locator as reference
             guideJnt = pm.joint(n=name+'JNT')
             guideJnt.template.set(True)
-            pm.parent(guideJnt, mainLoc)
+            pm.parent(guideJnt, grpJntlist[-1])
+            grpJntlist.append(guideJnt)
 
-            if self.asChain:
-                self.chainList.append(guideJnt)
+            pm.parentConstraint(mainLoc,guideJnt)
 
         # move locators for better selection in the world, more for UX in the scene
         for count, loc in enumerate(locIter):

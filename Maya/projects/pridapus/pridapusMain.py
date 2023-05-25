@@ -36,18 +36,16 @@ def createGuildes():
                                 name='spine',
                                 side='C',
                                 size=1,
-                                guideList=['spine%s' % i for i in range(5)],
+                                nameList=['spine%s' % i for i in range(5)],
                                 color=None,
-                                asChain = False,
                                 )
 
     arm = LocGuides.locGuides(
                                 name='arm',
                                 side='L',
                                 size=1,
-                                guideList=['arm%s' % i for i in range(3)],
+                                nameList=['arm%s' % i for i in range(3)],
                                 color=None,
-                                asChain=False,
                                 mirror=True,
                                 mirrorRotatoin=True,
                             )
@@ -55,9 +53,8 @@ def createGuildes():
                                 name='leg',
                                 side='L',
                                 size=1,
-                                guideList=['leg%s' % i for i in range(3)],
+                                nameList=['leg%s' % i for i in range(3)],
                                 color=None,
-                                asChain=False,
                                 mirror=True,
                                 mirrorRotatoin=True,
                             )
