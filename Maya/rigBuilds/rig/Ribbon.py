@@ -1,7 +1,32 @@
 import maya.cmds as cmds
 import pymel.core as pm
-import NodeControlCurve
+import ControlNodes
 
+class ribbon():
+    def __init__(self,
+                 side='C',
+                 name='ribbon',
+                 numjoints=6,
+                 numControls=2,
+                 startAxis = y,
+                 backAxis = y,
+                 hook = None,
+
+                 # TODO sub controls
+                 # subControl=False,
+                 # subScale = [.8, .8, .8],
+                 # subAdjGrpNumber=2,
+                 ):
+
+        self.name = name
+        self.side = side
+        self.numjoints = numjoints
+        self.numControls = numControls
+        self.startAxis = startAxis
+        self.backAxis = backAxis
+        # Vars
+
+# REF
 class Ribbon(object):
     def __init__(self, name, path_curve, num_controls, control_shape='circle'):
         self.name = name
@@ -17,7 +42,7 @@ class Ribbon(object):
 
         # Create control curves for each point on the path curve
         for i in range(self.num_controls):
-            control_curve = NodeControlCurve.NodeControlCurve('%s_control_curve_%d' % (self.name, i), shape=self.control_shape)
+            control_curve = ControlNodes.NodeControlCurve('%s_control_curve_%d' % (self.name, i), shape=self.control_shape)
             self.control_curves.append(control_curve)
             pm.parent(control_curve.node_name, self.controls_grp)
 
