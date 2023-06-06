@@ -1,8 +1,10 @@
 import pymel.core as pm
-from rigBuilds import attribute
 import importlib as imp
 
-def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(4)],
+# from rigBuilds import attribute
+# imp.reload(attribute)
+
+def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
                      parent='SKELE',
                      primaryAxis='xyz',
                      secondaryAxisOrient = 'yup',
@@ -10,33 +12,49 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(4)],
                      tag=True,
                      ):
     '''
-    FUNCTION:      createJointChain()
-    DESCRIPTION:   Creates Joint Chains for rig setup
-    USAGE:         createJointChain(name='ACME', side='C', shape='acme', joints=['joint1'], scale = 3,
-    RETURN:        list of joint ex []
-    AUTHOR:        Tony K Song
-    DATE:          05/25/2023
-    Version        1.0.0
+    createJointChain() Function
 
-    guideList       :   Names of locGuides
-    parent          :   to parent the entire chain
-    primaryAxis     :   xyz as default,
-    secondayAxis    :   axis to point up to
-    orientJointEnd  :   to orient the end joint of the chain with alignment the chain
-    tag             :   to tag current made joints
+    Creates a joint chain for rig setup.
+
+    Usage:
+    createJointChain(name='ACME', side='C', shape='acme', joints=['joint1'], scale=3,
+    guideList=[], parent=None, primaryAxis='xyz', secondaryAxis='y', orientJointEnd=True, tag='')
+
+    Parameters:
+    - name (str): Name prefix for the joint chain.
+    - side (str): Side identifier for the joint chain. Use 'L' for left, 'R' for right, 'C' for center.
+    - shape (str): Shape identifier for the joint chain.
+    - joints (list): Names of additional joints to be created in the chain.
+    - scale (int): Scale factor for the joint chain.
+    - guideList (list): Names of locGuides.
+    - parent (str): Name of the parent joint to which the entire chain should be connected.
+    - primaryAxis (str): Primary axis for joint orientation. Use 'x', 'y', or 'z'.
+    - secondaryAxis (str): Axis that should point up for joint orientation.
+    - orientJointEnd (bool): Flag indicating whether to orient the end joint of the chain with alignment.
+    - tag (str): Tag for the current made joints.
+
+    Returns:
+    - list: List of joints as strings.
+
+    Author: Tony K Song
+    Date: 05/25/2023
+    Version: 1.0.0
     '''
+
     JntList = []
+    jointList = []
     otherJntList = []
     otherJntList.append(parent)
-    jointList = []
-    for guides in guideList:
+
+    for guideNd in guideList:
         # delete existing chain from scene
-        if pm.objExists(guides.replace('_GDE', '_JNT')):
-            pm.delete(guides.replace('_GDE', '_JNT'))
+        jntName = guideNd.replace('_GDE', '_JNT')
+        if pm.objExists(jntName):
+            pm.delete(jntName)
         # create joints
-        gde = pm.PyNode(guides)
+        gde = pm.PyNode(guideNd)
         jnts = pm.joint(
-                        n=guides.replace('_GDE', '_JNT'),
+                        n=jntName,
                         p=gde.translate.get(),
                         o=gde.rotate.get(),
                         )

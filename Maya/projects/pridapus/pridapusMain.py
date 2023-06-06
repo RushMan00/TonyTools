@@ -1,12 +1,15 @@
 import pymel.core as pm
 import importlib as imp
-from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides, attribute
 
+from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides, attribute
 imp.reload(LoadMaFile)
 imp.reload(BaseRig)
 imp.reload(LocGuides)
 imp.reload(LocGuidesIO)
 imp.reload(attribute)
+
+from rigBuilds.rig import Spline
+imp.reload(Spline)
 
 # --- Backend
 paths = 'D:\OneDrive\TonyTools\Maya\projects\pridapus'
@@ -66,9 +69,13 @@ def saveGuildes():
     dataList = LocGuidesIO.writeLocGuidesData(tagName='locator', filePath=paths + '\data\locGuides')
 
 def createRig():
-    # rigs are build on top locGuides
-    # spineRig.spine()
-    pass
+    # --- create spline
+    Spline.spline(side='C',
+                  name='splineRig',
+                  guideList=['C_spine%s_GDE' % i for i in range(5)],
+                  numControls = 2,
+                  )
+
 
 # def cleanup():
 #     # this is cleanup phase to lock and hide things, and use ishistoricaly intersestiing
