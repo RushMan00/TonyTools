@@ -73,7 +73,7 @@ def createRig():
     Spline.spline(side='C',
                   name='splineRig',
                   guideList=['C_spine%s_GDE' % i for i in range(5)],
-                  numControls = 2,
+                  numControls = 3`,
                   )
 
 

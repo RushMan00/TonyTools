@@ -32,11 +32,10 @@ class spline():
         self.fullName= '{}_{}'.format(side,name)
         self.iKhandle = None
         self.effector = None
+        self.curveLength = int()
         self.jntList = []
 
-
         # initate
-
 
         self.__create()
 
@@ -51,6 +50,8 @@ class spline():
                                          )
         # create the curve points on the joints
         crv = Tools.createCurveOnPoints(name=self.curveName, parent=self.parentCurve, nodeList=spline)
+        crv = pm.PyNode(self.curveName)
+        crv.setParent(self.mainRigGroup)
         # Create the IK Spline handle
         ikHandle = pm.ikHandle(n=self.fullName + 'iKHandle',
                                startJoint=self.jointList[0],
@@ -58,11 +59,12 @@ class spline():
                                solver="ikSplineSolver")
         self.iKhandle = ikHandle[0]
         self.effector = ikHandle[1]
+        self.iKhandle.setParent(self.mainRigGroup)
         # Set the curve as the input curve for the IK Spline handle
         pm.ikHandle(self.iKhandle, e=True, curve=self.curveName)
         pm.delete(ikHandle[2])
-
         # create joints evenly base on arc length and number of controls pramater DO NOT need to tag
+        Joints.addJointsAlongCurve(curve=self.curveName, numJoints=self.numControls, tag=False)
 
         # bind skin on joints to curve
 

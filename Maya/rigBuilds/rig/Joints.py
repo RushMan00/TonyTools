@@ -1,8 +1,8 @@
 import pymel.core as pm
 import importlib as imp
 
-# from rigBuilds import attribute
-# imp.reload(attribute)
+from rigBuilds import attribute
+imp.reload(attribute)
 
 def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
                      parent='SKELE',
@@ -79,3 +79,28 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
     pm.select(JntList[-1], deselect=True)
 
     return JntList
+
+def addJointsAlongCurve(curve='C_curve0_CRV', numJoints=3, tag = False):
+    # Get the curve's length using the arclen node
+    arclenNode = pm.arclen(curve, ch=True)
+    curveLength = pm.getAttr(arclenNode + ".arcLength")
+
+    # Calculate the parameter step value for even spacing
+    parameterStep = curveLength / (numJoints - 1)
+
+    # Create joints along the curve
+    jointList = []
+    for i in range(numJoints):
+        parameter = i * parameterStep
+
+        # Get the position on the curve for the current parameter
+        position = pm.pointOnCurve(curve, parameter=parameter, position=True)
+
+        # Create a joint at the current position
+        joint = pm.joint(p=position, name="joint{}".format(i + 1))
+        jointList.append(joint)
+
+        if tag:
+            attribute.createTags(node=joint, tagName='joint', tagValue='JNT')
+
+    return jointList
