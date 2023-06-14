@@ -14,6 +14,7 @@ class controlCurves():
                  shape='acme',
                  rotate=[0, 0, 0],
                  scale=1,
+                 color=None,
                  parent=['C_object01_JNT'],
                  parentOrConst='parent',
                  adjGrpNumber=2,
@@ -46,6 +47,7 @@ class controlCurves():
         self.iterCounts = num
         self.shape = shape
         self.scale = scale
+        self.color = color
         self.parents = parent
         self.parentOrConst = parentOrConst
         self.rotate = rotate
@@ -115,10 +117,32 @@ class controlCurves():
             self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
 
             if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
-                self.__createControl()
+                self.__checkingSides()
                 self.iterCounts += 1
             else:
                 logging.warning(self.finalFullName + "same name exists in scene.")
+
+    def __checkingSides(self):
+        if self.side == 'C':
+            self.side = 'C'
+            if not self.color:
+                self.color = 22
+                self.__createControl()
+
+        elif self.side == 'L':
+            self.side = 'L'
+            if not self.color:
+                self.color = 4
+                self.__createControl()
+
+        elif self.side == 'R':
+            self.side = 'R'
+            if not self.color:
+                self.color = 6
+                self.__createControl()
+        else:
+            pm.warning('Please specify a "side".')
+            return
     # End of __initialSetup
 
     def __createControl(self):
@@ -455,6 +479,12 @@ class controlCurves():
                 # End of  parent Constraints
         else:
             pass
+
+        # set colour on locator
+
+        mainLocShape = self.controlNames.getShape()
+        mainLocShape.overrideEnabled.set(1)
+        mainLocShape.overrideColor.set(self.color)
 
         # TODO : make sub controls
         # --- creating sub adj/buffer groups

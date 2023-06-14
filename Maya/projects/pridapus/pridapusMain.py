@@ -71,12 +71,18 @@ def saveGuildes():
 def createRig():
     # --- create spline
     Spline.spline(side='C',
-                  name='splineRig',
+                  name='spline',
                   guideList=['C_spine%s_GDE' % i for i in range(5)],
-                  numControls = 3`,
+                  numControls=3,
                   )
-
-
-# def cleanup():
-#     # this is cleanup phase to lock and hide things, and use ishistoricaly intersestiing
-#     pass
+def tagSkin():
+    pass
+def saveSkin():
+    pass
+def cleanup():
+    # this is cleanup phase to lock and hide things, and use ishistoricaly intersestiing
+    pass
+def savePublish():
+    pass
+def newScene():
+    pass

@@ -1,16 +1,19 @@
 import importlib as imp
+import pymel.core as pm
+
 from rigBuilds.rig import Joints, Tools
 imp.reload(Joints)
 imp.reload(Tools)
 
-import pymel.core as pm
+from rigBuilds import ControlCurves
+imp.reload(ControlCurves)
 
 class spline():
     def __init__(self,
                  side='C',
                  name='splineRig',
                  guideList=['C_spline%s_GDE' % i for i in range(5)],
-                 numControls=2,
+                 numControls=4,
                  parentCurve='RIG',
 
                  hook = None,
@@ -29,15 +32,15 @@ class spline():
         self.numControls = numControls
         self.parentCurve = parentCurve
         # Vars
-        self.fullName= '{}_{}'.format(side,name)
+        self.fullName = '{}_{}'.format(side,name)
         self.iKhandle = None
         self.effector = None
         self.curveLength = int()
         self.jntList = []
 
         # initate
-
         self.__create()
+        self.__cleanUp()
 
     def __create(self):
         self.mainRigGroup = pm.group(n=self.fullName + "_GRP", p='RIG')
@@ -63,10 +66,34 @@ class spline():
         # Set the curve as the input curve for the IK Spline handle
         pm.ikHandle(self.iKhandle, e=True, curve=self.curveName)
         pm.delete(ikHandle[2])
-        # create joints evenly base on arc length and number of controls pramater DO NOT need to tag
-        Joints.addJointsAlongCurve(curve=self.curveName, numJoints=self.numControls, tag=False)
+        # create joints evenly on curve and skin bind the joint controls
+        controlJnts = Joints.addJointsAlongCurve(side=self.side,
+                                                name=self.name +'Control',
+                                                curve=self.curveName,
+                                                numJoints=self.numControls, parent='RIG',
+                                                tag=False, skinToCurve=True,
+                                                primaryAxis='xyz',
+                                                secondaryAxisOrient='yup')
+        # create Curve controls
+        for num, i in enumerate(controlJnts):
+            ControlCurves.controlCurves(name=self.name,
+                                         side=self.side,
+                                         num=num,
+                                         shape='square',
+                                         rotate=[90, 0, 0],
+                                         scale=3,
+                                         parent = [i],
+                                         parentOrConst='const',
+                                         adjGrpNumber=1,
+                                         hook = 'C_globalGimbal0_CNT',
+                                         tag=True,
+                                         )
+        # create stretchy
 
-        # bind skin on joints to curve
+    def __cleanUp(self):
+        # remove locatorGuides Group
+        par = pm.listRelatives(self.guideList[0], parent=True)
+        pm.delete(par)
 
 
 

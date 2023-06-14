@@ -80,27 +80,56 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
 
     return JntList
 
-def addJointsAlongCurve(curve='C_curve0_CRV', numJoints=3, tag = False):
-    # Get the curve's length using the arclen node
-    arclenNode = pm.arclen(curve, ch=True)
-    curveLength = pm.getAttr(arclenNode + ".arcLength")
+def addJointsAlongCurve(side='C',
+                        name='JointControl',
+                        curve='C_curve0_CRV',
+                        numJoints=3, parent=None,
+                        tag=False, skinToCurve=True,
+                        primaryAxis='xyz',
+                        secondaryAxisOrient='yup',
+                        ):
+    fullname = '{}_{}'.format(side,name)
 
-    # Calculate the parameter step value for even spacing
-    parameterStep = curveLength / (numJoints - 1)
+    if numJoints <3:
+        pm.warning('numJoints must be more than 3')
 
-    # Create joints along the curve
-    jointList = []
-    for i in range(numJoints):
-        parameter = i * parameterStep
+    realCrv = pm.PyNode(curve)
+    crvdup = pm.duplicate(curve)
+    crv = pm.rename(crvdup, name+'DUP')
+    # rebuild the curve with x amount of points with 1 Linear NOT 3Cubic
+    rebldCrv = pm.rebuildCurve(crv, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0,
+                                kep=1, kt=0, s=numJoints+1, d=1, tol=0.01)
+    pycrv = pm.PyNode(crv)
+    jointList = [crv]
 
-        # Get the position on the curve for the current parameter
-        position = pm.pointOnCurve(curve, parameter=parameter, position=True)
+    for i in range(numJoints + 2):
+        # get curve points world location
+        worldPositions = pm.xform(pycrv.cv[i], query=True, translation=True, worldSpace=True)
+        print(worldPositions)
 
-        # Create a joint at the current position
-        joint = pm.joint(p=position, name="joint{}".format(i + 1))
-        jointList.append(joint)
+        # create joint on top of
+        jnts = pm.joint(n='{}_JNT'.format(fullname+str(i)),
+                        p=worldPositions)
+        jnts.radius.set(1.5)
+        jointList.append(jnts.name())
+        pm.joint(jnts,
+                 e=True, oj=primaryAxis,
+                 secondaryAxisOrient=secondaryAxisOrient,
+                 ch=True, zso=True)
+        pm.select(deselect=1)
 
-        if tag:
-            attribute.createTags(node=joint, tagName='joint', tagValue='JNT')
+    pm.delete(crv)
+    jointList.pop(0)
+    grp = pm.group(n=fullname+'_GRP')
+    pm.parent(jointList, grp)
+    # pm.parent(grp, jointList)
+
+    if parent:
+        pm.parent(grp,parent)
+
+    if skinToCurve:
+        skinCluster = pm.skinCluster(jointList, realCrv,
+                                      toSelectedBones=True, tsb=True, bm=0,
+                                      dr=3, mi=1, lw=True, wt=0, omi=False)
 
     return jointList
