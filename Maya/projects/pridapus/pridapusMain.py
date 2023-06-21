@@ -30,7 +30,7 @@ def loadModel():
     # tag All Geos With Skin
     for mesh in meshes:
         attribute.createTags(node=mesh, tagName='skin', tagValue='skinweights')
-        pm.parent(mesh, 'GEO')
+        # pm.parent(mesh, 'GEO')
     # end of loadModel
 
 def createGuildes():
