@@ -1,18 +1,17 @@
 import os
 import sys
 import shutil
-import importlib as imp
+import importlib
+import traceback
 import pymel.core as pm
 
-# import rigBuilds
 from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides, attribute
 
-imp.reload(LoadMaFile)
-imp.reload(BaseRig)
-imp.reload(LocGuides)
-imp.reload(LocGuidesIO)
-imp.reload(attribute)
-
+importlib.reload(LoadMaFile)
+importlib.reload(BaseRig)
+importlib.reload(LocGuides)
+importlib.reload(LocGuidesIO)
+importlib.reload(attribute)
 
 class riggingUI():
     def __init__(self):
@@ -21,13 +20,14 @@ class riggingUI():
         self.paths = r"D:/OneDrive/TonyTools/Maya/projects"
         self.locGuidePaths = r'/data/locGuides'
         self.fullLocGuidePaths = None
-        self.selected_item = None
+        # self.selected_item = None
         self.folders = None
         self.folderIter = []
-        self.option_menu_for_assets = None  # Declare option_menu_for_assets as an instance variable
-        self.create_asset_window = None  # Declare create_asset_window as an instance variable
-        self.asset_path_text_field = None  # Declare asset_path_text_field as an instance variable
-
+        self.module = None
+        self.option_menu_for_assets = None
+        self.create_asset_window = None
+        self.asset_path_text_field = None
+        self.selected_item = None
         # init
         self.create_ui_window()
 
@@ -116,14 +116,12 @@ class riggingUI():
         selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
         print("Opening window : Create New Asset")
         self.create_asset_window()
-
     # END of Step 1 : asset listing and structure creation button
 
     # --- Step 2 : Build Meshes Fuction
     # Create a function to handle the button click event
     def build_mesh_callback(self, *args):
         pm.newFile(force=True)
-
         self.get_selected_asset()
         print(self.selected_item)
         BaseRig.baseRig(name=self.selected_item,
@@ -133,11 +131,9 @@ class riggingUI():
                             'SKELE': []
                         },
                         size=5)
-
         # Load in model
         main_model_paths = self.paths + '\{0}\model\{0}.ma'.format(self.selected_item)
         LoadMaFile.load_ma_file(main_model_paths)
-
         # Tag all Geos with Skin
         meshes = pm.ls(type='mesh')
         for mesh in meshes:
@@ -145,18 +141,17 @@ class riggingUI():
             if mesh.getParent() != 'GEO':
                 pm.parent(mesh, 'GEO')
         print("Build mesh from:", meshes)
-
         # Refresh the asset list in the UI window
         self.AssetList(self.option_menu_for_assets)
-
     # END OF Step 2 : Build Meshes Fuction
 
-    # --- Step 3 : Build LocGuides
+    # --- Step 3 : create LocGuides
     # Create a function to handle the "Build Guides" button click event
     def call_create_guides(self, *args):
         sys.path.append(self.paths + '\\' + self.selected_item)
-        module = imp.import_module(self.selected_item)
-        module.createGuides()
+        self.module = importlib.import_module(self.selected_item)
+        importlib.reload(self.module)
+        self.module.createGuides()
         print("Loading guides from folder:", self.paths)
         self.fullLocGuidePaths = self.paths + '/' + self.selected_item + '/' + self.locGuidePaths
         loaded = LocGuidesIO.loadLocGuidesData(filePath=self.fullLocGuidePaths)
@@ -171,31 +166,43 @@ class riggingUI():
     def save_guides_callback(self, *args):
         dataList = LocGuidesIO.writeLocGuidesData(tagName='locator', filePath=self.fullLocGuidePaths)
         print("Saving guides to folder:", dataList)
-
     # END OF Step 3 : Build LocGuides
 
     # --- Step 4 : Build Rigs
     # Create a function to handle the "Build Rigs" button click event
     def build_rigs_callback(self, *args):
-        selected_folder = pm.optionMenu(optionMenuForAssets, query=True, value=True)
-        print("Building rigs in folder:", selected_folder)
+        try:
+            self.module = importlib.import_module(self.selected_item)
+            print("Imported module:", self.module)
+            importlib.reload(self.module)
+            self.module.createRig()
+            print("Called createRig() in module")
+
+            print("Building Rig from folder:", self.paths)
+
+        except Exception as e:
+            traceback.print_exc()
+            print("Error:", e)
+
+        # apply auto skin
+        # self.fullLocGuidePaths = self.paths + '/' + self.selected_item + '/' + self.locGuidePaths
+        # loaded = LocGuidesIO.loadLocGuidesData(filePath=self.fullLocGuidePaths)
+        # print("Building Rig from folder:", loaded)
 
     # --- Skin Section
     def load_skins_callback(self, *args):
-        selected_folder = pm.optionMenu(optionMenuForAssets, query=True, value=True)
+        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
         print("load skins from folder:", selected_folder)
 
     def save_skins_callback(self, *args):
-        selected_folder = pm.optionMenu(optionMenuForAssets, query=True, value=True)
+        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
         print("load skins from folder:", selected_folder)
-
     # END OF Step 4 : Build LocGuides
 
     # --- Step 5 : Clean up Rigs
     def clean_up_rig_from_callback(self, *args):
-        selected_folder = pm.optionMenu(optionMenuForAssets, query=True, value=True)
+        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
         print("cleaning up rig :", selected_folder)
-
     # --- END OF Step 5 : Clean up Rigs
 
     def create_ui_window(self):
@@ -237,7 +244,7 @@ class riggingUI():
         # END OF Step 3 : Load LocGuides
 
         # --- Step 4 : create rigs Elements
-        step4Text = pm.text(label="Step 4 : Create the Rig")
+        step4Text = pm.text(label="Step 4 : Create Rig")
         build_rigs_button = pm.button(label="Build Rigs", command=self.build_rigs_callback)
         # Create a button to load skins
         load_skin_button = pm.button(label="Load skins", command=self.load_skins_callback)
