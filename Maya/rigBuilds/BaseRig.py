@@ -87,13 +87,11 @@ class baseRig2():
                  size=1,
                  ):
         """
-
-        :type children: list type
+        QUICK WAY TO GET RIG BASE
         """
         self.name = name
         self.size = size
         self.groups = ['RIG', 'GEO', 'SKELE']
-        self.RIG = ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP']
 
         # TODO
         # self.colour = colour
@@ -104,10 +102,6 @@ class baseRig2():
         # Exacute process
         self.__createStructure()
 
-    # def __instancecheck__(self, instance):
-    #     if pm.objExist(self.name):
-    #         logging.warning(self.finalFullName + "same name exists in scene.")
-
     def __createStructure(self):
         # create the main group
         mainGrp = pm.group(em=True, n=self.name)
@@ -117,8 +111,9 @@ class baseRig2():
 
         # RIG
         rig = 'RIG'
-        main = pm.group(em=True, n='C_main_GRP', p=rig)
+        RIG = ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP']
 
+        main = pm.group(em=True, n='C_main_GRP', p=rig)
         globalControl = ControlCurves.controlCurves(name='global',
                                               side='C',
                                               shape='global',
@@ -142,3 +137,5 @@ class baseRig2():
                                               adjGrpNumber=1,
                                               tag=True
                                               )
+
+        main = pm.group(em=True, n='C_local_GRP', p=godControl)

@@ -124,13 +124,8 @@ class riggingUI():
         pm.newFile(force=True)
         self.get_selected_asset()
         print(self.selected_item)
-        BaseRig.baseRig(name=self.selected_item,
-                        groups={
-                            'GEO': [],
-                            'RIG': ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP'],
-                            'SKELE': []
-                        },
-                        size=5)
+        BaseRig.baseRig2(name=self.selected_item,
+                         size=5)
         # Load in model
         main_model_paths = self.paths + '\{0}\model\{0}.ma'.format(self.selected_item)
         LoadMaFile.load_ma_file(main_model_paths)
