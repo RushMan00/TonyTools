@@ -58,22 +58,21 @@ class baseRig():
                         val = lst.replace('C_', '').replace('_CTL', '')
                         control = ControlCurves.controlCurves(name=val,
                                                               side='C',
-                                                              shape='acme',
+                                                              shape='god',
                                                               num=0,
                                                               rotate=[0, 0, 0],
                                                               scale=self.size - num,
                                                               parent=[nextList[num]],
-                                                              parentOrConst=None,
+                                                              parentOrConst='parent',
                                                               hook=nextList[-1],
                                                               adjGrpNumber=1,
                                                               tag=True
                                                               )
-
                         nextList.append(control.getInstancesList()[-1])
                         num += 1
                     else:
-                        pm.group(em=True, n=lst, p=nextList[num])
-                        nextList.append(lst)
+                        bah = pm.group(em=True, n=lst, p=nextList[num])
+                        nextList.append(bah)
                         num += 1
 
     # Exacute process
@@ -82,3 +81,64 @@ class baseRig():
         self.__createStructure()
         # self.__createGrpsandSubGrps()
 
+class baseRig2():
+    def __init__(self,
+                 name='Base',
+                 size=1,
+                 ):
+        """
+
+        :type children: list type
+        """
+        self.name = name
+        self.size = size
+        self.groups = ['RIG', 'GEO', 'SKELE']
+        self.RIG = ['C_main_GRP', 'C_global_CTL', 'C_globalGimbal_CTL', 'C_local_GRP']
+
+        # TODO
+        # self.colour = colour
+        # self.upaxis = upaxis
+
+        self.fullName = 'C_' + name + '_GRP'
+
+        # Exacute process
+        self.__createStructure()
+
+    # def __instancecheck__(self, instance):
+    #     if pm.objExist(self.name):
+    #         logging.warning(self.finalFullName + "same name exists in scene.")
+
+    def __createStructure(self):
+        # create the main group
+        mainGrp = pm.group(em=True, n=self.name)
+        # create the child groups
+        for stuff in self.groups:
+            grp = pm.group(em=True, n=stuff, p=mainGrp)
+
+        # RIG
+        rig = 'RIG'
+        main = pm.group(em=True, n='C_main_GRP', p=rig)
+
+        globalControl = ControlCurves.controlCurves(name='global',
+                                              side='C',
+                                              shape='global',
+                                              num=0,
+                                              rotate=[0, 0, 0],
+                                              scale=self.size,
+                                              hook = 'C_main_GRP',
+                                              parentOrConst='parent',
+                                              adjGrpNumber=1,
+                                              tag=True
+                                              )
+        num = self.size / 2.2
+        godControl = ControlCurves.controlCurves(name='god',
+                                              side='C',
+                                              shape='god',
+                                              num=0,
+                                              rotate=[0, 0, 0],
+                                              scale=num,
+                                              hook = globalControl,
+                                              parentOrConst='parent',
+                                              adjGrpNumber=1,
+                                              tag=True
+                                              )

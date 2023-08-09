@@ -1,15 +1,18 @@
 import maya.cmds as cmds
 import pymel.core as pm
 
-def scaleCurve(controlCurve = 'curve1',
-               scale = 3):
+
+def scaleCurve(controlNames='C_global0_CNT', scale=1):
     """
     to scale curve with out effecting int of scale
     ex. scale xyz will always be 1
     """
-    spans = pm.getAttr( controlCurve+'.spans' )
-    spanlist = pm.ls('curve1.cv[0:%s]'%spans, fl = True)
-    pm.scale(scale,scale,scale, spanlist,a = True, ws = True)
+    MainControlCrv = pm.PyNode(controlNames)
+    for i in MainControlCrv.getShapes():
+        a = str(i.getName())
+        spans = pm.getAttr(i + '.spans')
+        allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
+        cmds.scale(scale, scale, scale, allSpans, r=True)
 
 
 def printVertPos(node=cmds.ls(sl=True)[0]):
@@ -19,7 +22,7 @@ def printVertPos(node=cmds.ls(sl=True)[0]):
     use cmds.curves and place the printed list in to the function
     """
     print('===== Copy =====')
-    spans = mc.getAttr(node + '.spans')
+    spans = cmds.getAttr(node + '.spans')
     nbr = cmds.ls('curve1.cv[0:%s]' % spans, fl=True)
     print(nbr)
     for i in nbr:

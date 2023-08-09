@@ -15,7 +15,7 @@ class controlCurves():
                  rotate=[0, 0, 0],
                  scale=1,
                  color=None,
-                 parent=['C_object01_JNT'],
+                 parent=[None],
                  parentOrConst='parent',
                  adjGrpNumber=2,
                  hook = None,
@@ -48,7 +48,7 @@ class controlCurves():
         self.shape = shape
         self.scale = scale
         self.color = color
-        self.parents = parent
+        self.parent = parent
         self.parentOrConst = parentOrConst
         self.rotate = rotate
         self.adjGrpNumber = adjGrpNumber
@@ -110,7 +110,17 @@ class controlCurves():
         self.__create()
 
     def __initialSetup(self):
-        for i in self.parents:
+
+        # # self.iterCounts += 1
+        # self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
+        #
+        # if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
+        #     self.__checkingSides()
+        #     self.iterCounts += 1
+        # else:
+        #     logging.warning(self.finalFullName + "same name exists in scene.")
+
+        for i in self.parent:
             # setup Var
             self.joint = i
             # self.iterCounts += 1
@@ -148,8 +158,14 @@ class controlCurves():
     def __createControl(self):
         if self.shape == 'acme':  # Done
             self.acmeControl()
+        elif self.shape == 'circle':  # Done
+            self.circleControl()
         elif self.shape == 'god':  # Done
             self.godControl()
+        elif self.shape == 'global':  # Done
+            self.globalControl()
+        # elif self.shape == 'godOffset':  # Done
+        #     self.godControl()
         elif self.shape == 'pyramid':  # Done
             self.pyramidControl()
         elif self.shape == 'cube':  # Done
@@ -164,7 +180,7 @@ class controlCurves():
             self.arrowControl()
         else:
             logging.warning(" wrong shape string. please chose one of the following in shapes: /n "
-                            " acme | pyramid | cube | god | square | arrowoutward | pinsquare | arrow")
+                            "circle | acme | pyramid | cube | god | square | arrowoutward | pinsquare | arrow")
 
     # ================================ THE CONTROL LIBRARY ================================
     # --- ACME CONTROL
@@ -193,6 +209,37 @@ class controlCurves():
         pm.delete(starcurve, circleCurve)
     # End of ACME CONTROL
 
+    # --- Circle CONTROL
+    def circleControl(self):
+        """circle control """
+        self.controlNames = pm.circle(name=self.finalFullName + "_" + self.CSN,
+                                      nr=[0,180,0], r=1, s=8, ch=0)
+
+    def globalControl(self):
+
+        self.innerCountShape = 0
+        """ACME usually for things to put any attrs or pramas for over all rig """
+        tricurve = pm.curve(name=self.finalFullName + "_triangle" + str(self.innerCountShape) + "_" + self.CSN,
+                             r=False, d=1,  # k = True, a = True,
+                             p=[
+                                 (-0.6687143531977059, 0.0, 1.1278843667738405),
+                                 (0.0, 0.0, 1.8020994704795177),
+                                 (0.6687143531977059, 0.0, 1.1278843667738405),
+                                 (-0.6687143531977059, 0.0, 1.1278843667738405),
+                             ])
+        circleCurve = pm.circle(name=self.finalFullName + "_circle" + str(self.innerCountShape) + "_" + self.CSN,
+                                nr=[0, 180, 0], ch=0)[0]
+        self.controlNames = pm.group(em=True, n=self.finalFullName + "_" + self.CSN)
+        self.controlNode = pm.parent(tricurve.getShape(), circleCurve.getShape(), self.controlNames, s=True,
+                                     r=True)
+        pm.delete(tricurve, circleCurve)
+
+    # End of Circle CONTROL
+    def HexControl(self):
+        """Hex control """
+        self.controlNames = pm.circle(name=self.finalFullName + "_" + self.CSN,
+                                      nr=[0,180,0], r=1, s=8, d=1, ch=0)
+    # End of Circle CONTROL
     # --- GOD CONTROL
     def godControl(self):
         crvNames = []
@@ -465,26 +512,28 @@ class controlCurves():
             self.finishedGrpLst.append(grp)
         self.finishedGrpLst.append(MainControlCrv)
 
-        # find matrix of joints and set it on the frist dag group
-        parent = pm.PyNode(self.parents[0])
-        parentMatrix = parent.getMatrix()
-        mainGrpName.setMatrix(parentMatrix)
-        # END OF adj/buffer groups
-        if self.parentOrConst:
-            if self.parentOrConst == 'parent':
-                pm.parent(self.parents, MainControlCrv)
+        # find matrix of parent and set it on the child
+        if self.parent[0]:
+            parent = pm.PyNode(self.parent[0])
+            parentMatrix = parent.getMatrix()
+            mainGrpName.setMatrix(parentMatrix)
+            # END OF adj/buffer groups
+            if self.parentOrConst:
+                if self.parentOrConst == 'parent':
+                    pm.parent(self.parent, MainControlCrv)
 
-            elif self.parentOrConst == 'const':
-                bah = pm.parentConstraint(MainControlCrv, self.parents[0], mo=False, n=self.fullName+'Const')
-                # End of  parent Constraints
-        else:
-            pass
+                elif self.parentOrConst == 'const':
+                    bah = pm.parentConstraint(MainControlCrv, self.parent[0], mo=False, n=self.fullName+'Const')
+                    # End of  parent Constraints
+            else:
+                pass
 
         # set colour on locator
 
-        mainLocShape = self.controlNames.getShape()
-        mainLocShape.overrideEnabled.set(1)
-        mainLocShape.overrideColor.set(self.color)
+        mainLocShape = self.controlNames.getShapes()
+        for mama in mainLocShape:
+            mama.overrideEnabled.set(1)
+            mama.overrideColor.set(self.color)
 
         # TODO : make sub controls
         # --- creating sub adj/buffer groups
