@@ -3,6 +3,7 @@ import pymel.core as pm
 import json
 import os
 import importlib as imp
+import xml.etree.ElementTree as ET
 
 from rigBuilds import LoadMaFile, BaseRig, Checker, LocGuidesIO, LocGuides, attribute, ControlMakerTools
 imp.reload(LoadMaFile)
@@ -13,6 +14,33 @@ imp.reload(attribute)
 imp.reload(ControlMakerTools)
 
 tagName = 'skinweight'
+tonyfilePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
+
+def tagAsSkin(object=None):
+    """
+    Tag selected objects and objects from the input list as Skin str names.
+
+    Args:
+        input_list (list): List of objects to be tagged.
+
+    Returns:
+        list: A list containing the names of tagged objects.
+    """
+    # If input_list is not provided, default to an empty list
+    if object is None:
+        object = []
+    # Create a copy of the input_list to prevent modifying the original list
+    allObjects = object.copy()
+    # Get currently selected objects in the Maya scene
+    pm_objects = pm.ls(sl=1)
+    # Add the names of selected objects to the allObjects list
+    allObjects.extend(pm_obj.name() for pm_obj in pm_objects)
+    # Print the names of all tagged objects
+    for obj in allObjects:
+        # Tag all objects as SKIN
+        attribute.createTags(node=obj, tagName=tagName, tagValue='SKIN')
+    # return list of tagged SkinWeights
+    return allObjects
 
 def selectTaggedSkins():
     """
@@ -22,7 +50,7 @@ def selectTaggedSkins():
     ListofObject = attribute.selectTags(tagName=tagName)
     return ListofObject
 
-def exportTaggedSkinWeightMap(filePath):
+def exportTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
     # checking paths
     if not Checker.checkIfFilePathsExist(filePath):
         print('path is there continuing..')
@@ -34,54 +62,74 @@ def exportTaggedSkinWeightMap(filePath):
         mesh = pm.PyNode(objectName)
         meshName = mesh.name()
 
-        # Get the skin cluster
-        skin_cluster = None
-        for history_node in mesh.history():
-            if isinstance(history_node, pm.nt.SkinCluster):
-                skin_cluster = history_node
-                break
-        if not skin_cluster:
-            print(f"No skin cluster found on the selected mesh on {objectName}.")
-            continue
+        pm.deformerWeights(meshName+'.xml', path=filePath,
+                           ex=True, sh=meshName, vc=True)
 
-        pm.deformerWeights(meshName, ex=True, path=filePath)
+def importTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
+    # look though the path names with .xml store it
+    # List all files in the directory
+    fileList = os.listdir(filePath)
+    # Filter XML files and extract names without extensions
+    xmlFilesNames = [file.split('.')[0] for file in fileList if file.endswith('.xml')]
+    # Print the extracted names
+    for xmlFileName in xmlFilesNames:
+        print(xmlFileName)
 
-def importTaggedSkinWeightMap(meshName, import_path):
-    #look though the path
+        # apply joints to mesh, get the source name in the xml file and appy all the joints as skinweigh
 
-    #get all the names of files but remove.weightMap
+        # List all files in the directory
+        file_list = os.listdir(filePath)
 
-    #
-    weight_map = pm.PyNode(meshName)
-    pm.deformerWeights(meshName, im=True, path=import_path)
+        jointList=[]
+        # Process each XML file
+        for file in file_list:
+            if file.endswith('.xml'):
+                xml_path = os.path.join(filePath, file)
 
+                # Parse the XML file
+                tree = ET.parse(xml_path)
+                root = tree.getroot()
 
-def tagAsSkin(inputList=None):
-    """
-    Tag selected objects and objects from the input list as Skin str names.
+                # Find elements with the 'source' attribute
+                elements_with_source = root.findall(".//*[@source]")
 
-    Args:
-        input_list (list): List of objects to be tagged.
+                # Extract and print the 'source' attribute value
+                for element in elements_with_source:
+                    source_value = element.get('source')
+                    jointList.append(source_value)
 
-    Returns:
-        list: A list containing the names of tagged objects.
-    """
-    # If input_list is not provided, default to an empty list
-    if inputList is None:
-        inputList = []
-    # Create a copy of the input_list to prevent modifying the original list
-    all_objects = inputList.copy()
-    # Get currently selected objects in the Maya scene
-    pm_objects = pm.ls(sl=1)
-    # Add the names of selected objects to the all_objects list
-    all_objects.extend(pm_obj.name() for pm_obj in pm_objects)
-    # Print the names of all tagged objects
-    for obj in all_objects:
-        # Tag all objects as SKIN
-        attribute.createTags(node=obj, tagName=tagName, tagValue='SKIN')
-    # return list of tagged SkinWeights
-    return all_objects
+                    # print(f"File: {file}, Source: {source_value}")
 
+                # must Create a skin cluster before applying data
+                mesh = pm.PyNode(xmlFileName)
+
+                skinCluster = None
+                skin_clusters = pm.listHistory(mesh, type='skinCluster')
+
+                # check if there is skin, store skinCluster
+                if skin_clusters:
+                    skinCluster = skin_clusters[0]  # Assuming there's only one skin cluster
+
+                if skinCluster:
+                    # Get the influence objects (joints) from the skin cluster
+                    influences = skinCluster.getInfluence()
+                    influence_names = [influence.name() for influence in influences]
+
+                    # Compare influence_names and jointList, get remaining objects
+                    remainingObjs = [item for item in jointList if item not in influence_names]
+
+                    if remainingObjs:
+                        # Add the remaining joints as influence objects
+                        pm.skinCluster(skinCluster, edit=True, addInfluence=remainingObjs)
+                else:
+                    # Create a new skin cluster
+                    skinCluster = pm.skinCluster(jointList, mesh, toSelectedBones=True)[0]
+
+                # get the list of names and then apply skinweight data
+                pm.deformerWeights(xmlFileName + '.xml', path=filePath,
+                                   im=True, sh=xmlFileName, vc=True)
+                # Tag Skinweights
+                tagAsSkin(object=xmlFileName)
 
 def copySkinToo(source_mesh, target_meshes):
     # Get the source mesh (with skin)
@@ -112,7 +160,7 @@ def copySkinToo(source_mesh, target_meshes):
 # target_meshes = [pm.PyNode("targetMesh1"), pm.PyNode("targetMesh2")]
 # copySkinToo(source_mesh, target_meshes)
 
-def saveSkinWeights(filePath='D:/OneDrive/TonyTools/Maya/projects/pridapus/data'):
+def OLDsaveSkinWeights(filePath='D:/OneDrive/TonyTools/Maya/projects/pridapus/data'):
     """
     to only select objects that has tagged as "skin" will have their skinweight data saved
     :return: selected objects tag as "skin"
