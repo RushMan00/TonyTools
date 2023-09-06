@@ -48,6 +48,11 @@ class riggingUI():
         for folder in self.folders:
             pm.menuItem(label=folder, parent=menu_control)
 
+    def getCurrentAssetFromList(self, *args):
+        "to select the current item on the asset list"
+        self.selected_item = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
+        print("Selected Item:", self.selected_item)
+
     def refreshAssetList(self, *args):
         # Refresh the asset list in the UI window
         self.AssetList(self.option_menu_for_assets)
@@ -65,7 +70,7 @@ class riggingUI():
     # Create a function to handle the button click event
     def build_mesh_callback(self, *args):
         pm.newFile(force=True)
-        self.get_selected_asset()
+        self.getCurrentAssetFromList()
         print(self.selected_item)
         BaseRig.baseRig2(name=self.selected_item,
                          size=5)
