@@ -2,6 +2,8 @@ import os
 import shutil
 import pymel.core as pm
 
+from rigBuilds import UI
+
 class AssetCreator():
     def __init__(self,
                  paths = r"D:/OneDrive/TonyTools/Maya/projects"):
@@ -57,6 +59,9 @@ class AssetCreator():
         model_asset_path = os.path.join(model_folder_path, os.path.basename(asset_path))
         shutil.copy(asset_path, model_asset_path)
         print("Sucssecful, Copied asset file to the model folder.")
+
+        # make this work!
+        # UI.riggingUI.refreshAssetList()
         return
 
     def create_ui_window(self):

@@ -5,12 +5,14 @@ import importlib
 import traceback
 import pymel.core as pm
 
-from rigBuilds import LoadMaFile, BaseRig, LocGuidesIO, LocGuides, attribute
+from rigBuilds import AssetCreator, LoadMaFile, BaseRig, LocGuidesIO, SkinWeightIO, LocGuides, attribute
 
+importlib.reload(AssetCreator)
 importlib.reload(LoadMaFile)
 importlib.reload(BaseRig)
 importlib.reload(LocGuides)
 importlib.reload(LocGuidesIO)
+importlib.reload(SkinWeightIO)
 importlib.reload(attribute)
 
 class riggingUI():
@@ -20,6 +22,8 @@ class riggingUI():
         self.paths = r"D:/OneDrive/TonyTools/Maya/projects"
         self.locGuidePaths = r'/data/locGuides'
         self.fullLocGuidePaths = None
+        self.skinWeightPaths = r'/data/skinweights'
+        self.fullSkinWeightPaths = None
         # self.selected_item = None
         self.folders = None
         self.folderIter = []
@@ -34,6 +38,7 @@ class riggingUI():
     # --- Step 1 : asset listing and structure creation button
     # Show menu
     def AssetList(self, menu_control):
+        "shows a list of current assets"
         # Clear the menu control
         menu_control.deleteAllItems()
         # Get the list of folders in the directory
@@ -43,79 +48,17 @@ class riggingUI():
         for folder in self.folders:
             pm.menuItem(label=folder, parent=menu_control)
 
-    def get_selected_asset(self, *args):
-        self.selected_item = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("Selected Item:", self.selected_item)
-
-    def create_asset_folder(self, *args):
-        asset_path = pm.textField(self.asset_path_text_field, query=True, text=True)
-
-        # Check if the path ends with .ma or .mb
-        if not asset_path.endswith(".ma") and not asset_path.endswith(".mb"):
-            pm.warning("Please make sure the Asset Path ends with .ma or .mb")
-            return
-
-        # Check if the file exists
-        if not os.path.exists(asset_path):
-            pm.warning("The file does not exist at the provided path.")
-            return
-
-        asset_name = os.path.splitext(os.path.basename(asset_path))[0]
-        asset_folder_path = os.path.join(self.paths, asset_name)
-
-        # Check if the asset folder already exists
-        if os.path.exists(asset_folder_path):
-            pm.warning(f"The asset folder '{asset_name}' already exists. Please choose a different asset name.")
-            return
-
-        # Create the asset folder
-        os.makedirs(asset_folder_path)
-        print("Created asset folder:", asset_name)
-
-        # Create the data and model folders
-        data_folder_path = os.path.join(asset_folder_path, "data")
-        model_folder_path = os.path.join(asset_folder_path, "model")
-        os.makedirs(data_folder_path)
-        os.makedirs(model_folder_path)
-
-        # Create the Python file based on the asset file
-        python_file_name = f"{asset_name}.py"
-        python_file_path = os.path.join(asset_folder_path, python_file_name)
-        with open(python_file_path, "w") as python_file:
-            python_file.write("# Python file for asset")
-
-        # Create the locGuides and skinweights folders under data folder
-        loc_guides_folder_path = os.path.join(data_folder_path, "locGuides")
-        skin_weights_folder_path = os.path.join(data_folder_path, "skinweights")
-        os.makedirs(loc_guides_folder_path)
-        os.makedirs(skin_weights_folder_path)
-
-        # Copy asset file to the model folder
-        model_asset_path = os.path.join(model_folder_path, os.path.basename(asset_path))
-        shutil.copy(asset_path, model_asset_path)
-        print("Copied asset file to the model folder.")
-
+    def refreshAssetList(self, *args):
         # Refresh the asset list in the UI window
         self.AssetList(self.option_menu_for_assets)
+        print("Asset List is refreshed")
 
-    def create_asset_window(self):
-        if self.create_asset_window and pm.window(self.create_asset_window, exists=True):
-            pm.deleteUI(self.create_asset_window, window=True)
-
-        self.create_asset_window = pm.window("Create New Asset", title="Create New Asset", widthHeight=(300, 120))
-        create_asset_layout = pm.columnLayout(adjustableColumn=True)
-
-        pm.text(label="Asset Path (with .ma or .mb extension):")
-        self.asset_path_text_field = pm.textField()
-        pm.button(label="Create Asset Structure", command=self.create_asset_folder)
-
-        pm.setParent('..')
-        pm.showWindow(self.create_asset_window)
-
+    # def createAssetStructure
     def create_asset(self, *args):
-        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("Opening window : Create New Asset")
-        self.create_asset_window()
+        "to create the asset structure to create new assets"
+        AssetCreator.AssetCreator(paths=self.paths)
+        print("Opening window : Create New Asset Structure")
+
     # END of Step 1 : asset listing and structure creation button
 
     # --- Step 2 : Build Meshes Fuction
@@ -136,8 +79,6 @@ class riggingUI():
             if mesh.getParent() != 'GEO':
                 pm.parent(mesh, 'GEO')
         print("Build mesh from:", meshes)
-        # Refresh the asset list in the UI window
-        self.AssetList(self.option_menu_for_assets)
     # END OF Step 2 : Build Meshes Fuction
 
     # --- Step 3 : create LocGuides
@@ -163,7 +104,9 @@ class riggingUI():
         print("Saving guides to folder:", dataList)
     # END OF Step 3 : Build LocGuides
 
-    # --- Step 4 : Build Rigs
+    # --- Step 4
+    # --- Build Rigs
+    "build the the rigs from its paths "
     # Create a function to handle the "Build Rigs" button click event
     def build_rigs_callback(self, *args):
         try:
@@ -184,26 +127,58 @@ class riggingUI():
         # loaded = LocGuidesIO.loadLocGuidesData(filePath=self.fullLocGuidePaths)
         # print("Building Rig from folder:", loaded)
 
-    # --- Skin Section
+    # --- Load Skin
     def load_skins_callback(self, *args):
-        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("load skins from folder:", selected_folder)
+        self.fullSkinWeightPaths = self.paths + '/' + self.selected_item + '/' + self.skinWeightPaths
+        SkinWeightIO.importTaggedSkinWeightMap(self.fullSkinWeightPaths)
+        print("load load_skins_callback from folder:")
 
+    # --- Save Skin
     def save_skins_callback(self, *args):
-        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("load skins from folder:", selected_folder)
-    # END OF Step 4 : Build LocGuides
+        "save skinweight to path"
+        self.fullSkinWeightPaths = self.paths + '/' + self.selected_item + '/' + self.skinWeightPaths
+        SkinWeightIO.exportTaggedSkinWeightMap(self.fullSkinWeightPaths)
+        print("load save_skins_callback from folder:")
+
+    # --- tag selected Skins
+    def tag_skins_callback(self, *args):
+        "selected Object will be tagged as skin"
+        taggedList = SkinWeightIO.tagAsSkin()
+        print(f"Tagging skins :, {taggedList}")
+
+    # --- copy Skinweight to
+    def copy_to_skin_callback(self, *args):
+        "selected First Object, to copy to second selected object + more"
+        SkinWeightIO.copySkinToo()
+
+    # END OF Step 4
 
     # --- Step 5 : Clean up Rigs
     def clean_up_rig_from_callback(self, *args):
-        selected_folder = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("cleaning up rig :", selected_folder)
+        try:
+            self.module = importlib.import_module(self.selected_item)
+            print("Imported module:", self.module)
+            importlib.reload(self.module)
+            self.module.cleanup()
+            print("Called cleanup() in module")
+
+            print("Building Rig from folder:", self.paths)
+
+        except Exception as e:
+            traceback.print_exc()
+            print("Error:", e)
     # --- END OF Step 5 : Clean up Rigs
 
     def create_ui_window(self):
+        """
+       creating the Rigging Ui
+        :return:
+        rigging UI
+        """
         # Close existing window
-        if pm.window(self.window_name, exists=True):
+        if self.window_name and pm.window(self.window_name, exists=True):
             pm.deleteUI(self.window_name, window=True)
+
         # Create UI window
         self.window_UI_node = pm.window(self.window_name, title=self.window_name, widthHeight=(250, 500))
         # Create a form layout
@@ -216,7 +191,7 @@ class riggingUI():
         # Populate the folder list
         self.AssetList(self.option_menu_for_assets)
         # Create a button to refresh the folder list
-        refreshButton = pm.button(label="Test", command=self.get_selected_asset)
+        refreshButton = pm.button(label="refresh List", command=self.refreshAssetList)
         # Create a button to create the asset
         create_asset_button = pm.button(label="Create Asset", command=self.create_asset)
         # END OF Step 1
@@ -246,9 +221,9 @@ class riggingUI():
         # Create a button to save skins
         save_skin_button = pm.button(label="Save skins", command=self.save_skins_callback)
         # Create a button to load skins
-        tag_skin_button = pm.button(label="tag skins", command=self.load_skins_callback)
+        tag_skin_button = pm.button(label="tag skins", command=self.tag_skins_callback)
         # Create a button to save skins
-        copy_skin_button = pm.button(label="copy skins to", command=self.save_skins_callback)
+        copy_skin_button = pm.button(label="copy skins to", command=self.copy_to_skin_callback)
         # END OF Step 4 : create rigs
 
         # --- clean up rigs
