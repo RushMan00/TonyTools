@@ -50,7 +50,7 @@ def selectTaggedSkins():
     ListofObject = attribute.selectTags(tagName=tagName)
     return ListofObject
 
-def exportTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
+def exportTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
     # checking paths
     if not Checker.checkIfFilePathsExist(filePath):
         print('path is there continuing..')
@@ -65,26 +65,21 @@ def exportTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\prid
         pm.deformerWeights(meshName+'.xml', path=filePath,
                            ex=True, sh=meshName, vc=True)
 
-def importTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
-    # look though the path and get the names of each file that has .xml exe store it
-
+def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
+    exist, modify_path = Checker.checkIfFilePathsExist(filePath)
     # List all files in the directory
-    fileDir = os.listdir(filePath)
+    fileDir = os.listdir(modify_path)
     # Filter XML files and extract names without extensions
-    xmlFilesNames = [file.split('.')[0] for file in fileDir if file.endswith('.xml')]
+    xml_file_name = [file.split('.')[0] for file in fileDir if file.endswith('.xml')]
     # Print the extracted names
-    for xmlFileName in xmlFilesNames:
-        print(xmlFileName)
-
-        # apply joints to mesh, get the source name in the xml file and appy all the joints as skinweight
-
+    for xml_file_name in xml_file_name:
+        print(xml_file_name)
         # List all files in the directory
         file_list = os.listdir(filePath)
         jointList=[]
-        # Process each XML file
+        # Processing each XML file
         for file in file_list:
             if file.endswith('.xml'):
-                # print(file)
                 # print(file)
                 xml_path = os.path.join(filePath, file)
                 # Parse the XML file
@@ -99,36 +94,40 @@ def importTaggedSkinWeightMap(filePath='D:\OneDrive\TonyTools\Maya\projects\prid
                     # print(f"File: {file}, Source: {source_value}")
 
                 # must Create a skin cluster before applying data
-                mesh = pm.PyNode(xmlFileName)
+                mesh = pm.PyNode(xml_file_name)
                 skinCluster = None
                 skinHis = pm.listHistory(mesh, type='skinCluster')
+                print(skinHis)
 
                 # check if there is skin, store skinCluster
                 if skinHis:
                     skinCluster = skinHis[0]  # Assuming there's only one skin cluster
+                    print('skincluster dose exist ' + skinCluster)
 
-                if skinCluster:
-                    # Get the influence objects (joints) from the skin cluster
-                    influences = skinCluster.getInfluence()
-                    influence_names = [influence.name() for influence in influences]
-
-                    # Compare influence_names and jointList, get remaining objects
-                    remainingJoints = [item for item in jointList if item not in influence_names]
-
-                    if remainingJoints:
-                        # Add the remaining joints as influence objects
-                        pm.skinCluster(skinCluster, edit=True, addInfluence=remainingJoints)
-
-                # # fix this, some reason already has skin cluster
-                # else:
-                #     # Create a new skin cluster
-                #     skinCluster = pm.skinCluster(jointList, mesh, toSelectedBones=True)[0]
+                    # if the skin cluster does exist
+                    if skinCluster:
+                        # Get the influenced objects (joints) from the skin cluster
+                        influences = skinCluster.getInfluence()
+                        influence_names = [influence.name() for influence in influences]
+                        print(f'there is {influence_names} on {skinCluster}')
+                        # Compare influence_names and jointList, get remaining objects
+                        remainingJoints = [item for item in jointList if item not in influence_names]
+                        print(f'the remaining Joints {remainingJoints}')
+                        if not pm.objExists(remainingJoints):
+                            # creating a dumpy one
+                            for jnt in remainingJoints:
+                                pm.joint(name=jnt)
+                        pm.skinCluster(skinCluster, edit=True, weight=0, ai=remainingJoints)
+                else:
+                    # else create a new skin cluster wit the jointList
+                    skinCluster = pm.skinCluster(jointList, mesh, toSelectedBones=True)[0]
+                    # Tag Skinweights
+                    tagAsSkin(object=xml_file_name)
 
                 # get the list of names and then apply skinweight data from the xml
-                pm.deformerWeights(xmlFileName + '.xml', path=filePath,
-                                   im=True, sh=xmlFileName, vc=True)
-                # # Tag Skinweights
-                # tagAsSkin(object=xmlFileName)
+                pm.deformerWeights(xml_file_name + '.xml', path=filePath,
+                                   im=True, sh=xml_file_name, vc=True)
+                print('adding in existing xml skin data')
 
 
 def copySkinToo(source_mesh, target_meshes):
@@ -154,56 +153,3 @@ def copySkinToo(source_mesh, target_meshes):
             source_skin_cluster.setWeights(target_mesh, vtx, influences, weights_to_apply)
 
     print("Skin weights copied successfully!")
-
-# def OLDsaveSkinWeightsAsJson(filePath='D:/OneDrive/TonyTools/Maya/projects/pridapus/data'):
-#     """
-#     to only select objects that has tagged as "skin" will have their skinweight data saved
-#     :return: selected objects tag as "skin"
-#     """
-#     # checking paths
-#     if not Checker.checkIfFilePathsExist(filePath):
-#         print('path is there continuing..')
-#         # go though each object and save out the skinweight data
-#         return
-#
-#     for objectName in selectTaggedSkins():
-#         # Select the mesh with the skin cluster
-#         mesh = pm.PyNode(objectName)
-#
-#         # Get the skin cluster
-#         skin_cluster = None
-#         for history_node in mesh.history():
-#             if isinstance(history_node, pm.nt.SkinCluster):
-#                 skin_cluster = history_node
-#                 break
-#         if not skin_cluster:
-#             print(f"No skin cluster found on the selected mesh on {objectName}.")
-#             continue
-#
-#         # Get skin weights
-#         skin_weights = skin_cluster.getWeights(mesh)
-#
-#         # Create a dictionary to store skin weights
-#         skin_data = []
-#         influences = [joint.name() for joint in skin_cluster.influenceObjects()]
-#         for vtx_index, vtx_weights in enumerate(skin_weights):
-#             influence_indices = [influences.index(joint) for joint in influences]
-#             skin_data.append({
-#                 "vertexIndex": vtx_index,
-#                 "influenceIndices": influence_indices,
-#                 "weights": vtx_weights
-#             })
-#
-#         # Create a dictionary for the output JSON format
-#         output_dict = {
-#             "sourceMesh": objectName,
-#             "influences": influences,
-#             "skinData": skin_data
-#         }
-#
-#         # Save skin weights to a JSON file
-#         jsonFilePath = os.path.join(filePath, f"{objectName}.json")
-#         with open(jsonFilePath, 'w') as f:
-#             json.dump(output_dict, f, indent=4)
-#
-#         print(f"Skin weights saved to {jsonFilePath}")
