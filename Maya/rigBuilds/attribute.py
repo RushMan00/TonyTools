@@ -7,7 +7,8 @@ USAGE:         tagged_objs = pm.ls('*.*myTag' == 'myTagValue')
 RETURN:        None
 REQUIRES:      None
 Version        1.0.0
-Examples:      
+Examples:      SKIN     :   skinweights
+               JOINTS   :   joints
 """
 
 def createTags(node='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
