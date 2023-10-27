@@ -32,7 +32,7 @@ def checkIfFilePathsExist(file_Path=r'D:/OneDrive/TonyTools'):
              and the modified path string.
 
     Usage Example:
-    exists, modified_path = checkIfFilePathsExist('D:/Example/Path')
+    exists, modified_path = Checker.checkIfFilePathsExist('D:/Example/Path')
     """
     filePath = convert_slashes_to_double_backslashes(file_Path)
     print(filePath)
