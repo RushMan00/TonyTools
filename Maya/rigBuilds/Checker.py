@@ -53,3 +53,24 @@ def checkIfObjectExist(obj_list=[]):
     print("Object(s) exist")
     return True
 
+def checkingSides(self):
+    if self.side == 'C':
+        self.side = 'C'
+        if not self.color:
+            self.color = 22
+            self.__createControl()
+
+    elif self.side == 'L':
+        self.side = 'L'
+        if not self.color:
+            self.color = 4
+            self.__createControl()
+
+    elif self.side == 'R':
+        self.side = 'R'
+        if not self.color:
+            self.color = 6
+            self.__createControl()
+    else:
+        pm.warning('Please specify a "side".')
+        return
