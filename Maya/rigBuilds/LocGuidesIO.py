@@ -2,6 +2,12 @@ import maya.cmds as cmds
 import pymel.core as pm
 import json
 import os
+import importlib as imp
+
+from rigBuilds import BaseRig, Checker, attribute
+imp.reload(BaseRig)
+imp.reload(Checker)
+imp.reload(attribute)
 
 def selectTaggedNodes(tagName='myTag'):
 
@@ -141,9 +147,9 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
     Date: 06/05/2023
     Version: 1.0.0
     '''
-
-    filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
-    filePath = os.path.join(filePath, 'locGuideData.json')
+    exists, filePath = Checker.checkIfFilePathsExist(filePath)
+    # filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
+    filePath = os.path.join(filePath, '/', 'locGuideData.json')
 
     if not os.path.exists(filePath):
         pm.warning(f"The file {filePath} does not exist.")
