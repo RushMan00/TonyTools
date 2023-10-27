@@ -5,18 +5,16 @@ import os
 import importlib as imp
 import xml.etree.ElementTree as ET
 
-from rigBuilds import LoadMaFile, BaseRig, Checker, LocGuidesIO, LocGuides, attribute, ControlMakerTools
-imp.reload(LoadMaFile)
+from rigBuilds import BaseRig, Checker, attribute
 imp.reload(BaseRig)
-imp.reload(LocGuides)
-imp.reload(LocGuidesIO)
+imp.reload(Checker)
 imp.reload(attribute)
-imp.reload(ControlMakerTools)
 
 tagName = 'skinweight'
-tonyfilePath='D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
+tagValue = 'SKIN'
+tonyfilePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
 
-def tagAsSkin(object=None):
+def tagAsSkin(object=[None]):
     """
     Tag selected objects and objects from the input list as Skin str names.
 
@@ -38,7 +36,7 @@ def tagAsSkin(object=None):
     # Print the names of all tagged objects
     for obj in allObjects:
         # Tag all objects as SKIN
-        attribute.createTags(node=obj, tagName=tagName, tagValue='SKIN')
+        attribute.createTags(node=obj, tagName=tagName, tagValue=tagValue)
     # return list of tagged SkinWeights
     return allObjects
 
@@ -62,73 +60,94 @@ def exportTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pri
         mesh = pm.PyNode(objectName)
         meshName = mesh.name()
 
-        pm.deformerWeights(meshName+'.xml', path=filePath,
+        # List the history of the geometry and find the skinCluster
+        history = pm.listHistory(meshName)
+        skinClusters = [node for node in history if isinstance(node, pm.nodetypes.SkinCluster)]
+        if not skinClusters:
+            print(f"No skinCluster found on {meshName}")
+        print(f'there is {skinClusters[0].name()} on {meshName}')
+
+        # get skincluster name from geo
+        pm.deformerWeights(meshName+'.xml', path=filePath, df=skinClusters[0].name(),
                            ex=True, sh=meshName, vc=True)
 
+
 def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
+    print('---- STARTING importing tagged Skin Weight Maps ----')
     exist, modify_path = Checker.checkIfFilePathsExist(filePath)
-    # List all files in the directory
-    fileDir = os.listdir(modify_path)
-    # Filter XML files and extract names without extensions
-    xml_file_name = [file.split('.')[0] for file in fileDir if file.endswith('.xml')]
-    # Print the extracted names
-    for xml_file_name in xml_file_name:
-        print(xml_file_name)
-        # List all files in the directory
-        file_list = os.listdir(filePath)
-        jointList=[]
-        # Processing each XML file
-        for file in file_list:
-            if file.endswith('.xml'):
-                # print(file)
-                xml_path = os.path.join(filePath, file)
-                # Parse the XML file
-                tree = ET.parse(xml_path)
-                root = tree.getroot()
-                # Find elements with the 'source' attribute
-                elements_with_source = root.findall(".//*[@source]")
-                # Extract and print the 'source' attribute value
-                for element in elements_with_source:
-                    source_value = element.get('source')
-                    jointList.append(source_value)
-                    # print(f"File: {file}, Source: {source_value}")
+    if not exist:
+        print(f"The specified file path does not exist.")
+        return
 
-                # must Create a skin cluster before applying data
-                mesh = pm.PyNode(xml_file_name)
-                skinCluster = None
-                skinHis = pm.listHistory(mesh, type='skinCluster')
-                print(skinHis)
+    # List all XML files in the directory
+    xml_files = [file for file in os.listdir(modify_path) if file.endswith('.xml')]
+    print(f'this is the list of files as xml {xml_files}')
+    for xml_file in xml_files:
+        xml_file_name = xml_file.split('.')[0]
+        print(f" going though {xml_file_name}")
 
-                # check if there is skin, store skinCluster
-                if skinHis:
-                    skinCluster = skinHis[0]  # Assuming there's only one skin cluster
-                    print('skincluster dose exist ' + skinCluster)
+        joint_list = []
+        skin_list = []
 
-                    # if the skin cluster does exist
-                    if skinCluster:
-                        # Get the influenced objects (joints) from the skin cluster
-                        influences = skinCluster.getInfluence()
-                        influence_names = [influence.name() for influence in influences]
-                        print(f'there is {influence_names} on {skinCluster}')
-                        # Compare influence_names and jointList, get remaining objects
-                        remainingJoints = [item for item in jointList if item not in influence_names]
-                        print(f'the remaining Joints {remainingJoints}')
-                        if not pm.objExists(remainingJoints):
-                            # creating a dumpy one
-                            for jnt in remainingJoints:
-                                pm.joint(name=jnt)
-                        pm.skinCluster(skinCluster, edit=True, weight=0, ai=remainingJoints)
-                else:
-                    # else create a new skin cluster wit the jointList
-                    skinCluster = pm.skinCluster(jointList, mesh, toSelectedBones=True)[0]
-                    # Tag Skinweights
-                    tagAsSkin(object=xml_file_name)
+        xml_path = os.path.join(modify_path, xml_file)
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
 
-                # get the list of names and then apply skinweight data from the xml
-                pm.deformerWeights(xml_file_name + '.xml', path=filePath,
-                                   im=True, sh=xml_file_name, vc=True)
-                print('adding in existing xml skin data')
+        # Find elements with the 'source' attribute
+        elements_with_source = root.findall(".//*[@source]")
+        for element in elements_with_source:
+            source_value = element.get('source')
+            joint_list.append(source_value)
 
+        # Find elements with the 'deformer' attribute
+        elements_with_deformer = root.findall(".//*[@deformer]")
+        for element in elements_with_deformer:
+            skin_cluster_name = element.get('deformer')
+            skin_list.append(skin_cluster_name)
+
+        # Validate mesh exists
+        if not pm.objExists(xml_file_name):
+            print(f"The object {xml_file_name} does not exist in the scene.")
+            continue
+
+        mesh = pm.PyNode(xml_file_name)
+
+        # Validate all joints exist
+        for joint in joint_list:
+            if not pm.objExists(joint):
+                print(f"The joint {joint} does not exist in the scene.")
+                return
+
+        # Find or create skin cluster
+        skin_cluster = None
+        skin_history = pm.listHistory(mesh, type='skinCluster')
+
+        # if there is skin cluster add in the joints that are not connected
+        if skin_history:
+            skin_cluster = skin_history[0]  # Assuming there's only one skin cluster
+            print(f'Skin cluster does exist: {skin_cluster.name()}')
+
+            influences = skin_cluster.getInfluence()
+            influence_names = [influence.name() for influence in influences]
+            print(f'There are {influence_names} on {skin_cluster.name()}')
+
+            remaining_joints = [item for item in joint_list if item not in influence_names]
+            print(f'The remaining joints: {remaining_joints}')
+
+            # if remaining_joints:
+            pm.skinCluster(skin_cluster, edit=True, weight=0, ai=remaining_joints)
+        # else add in the skin cluster relative to the xml file
+        else:
+            # if there is more than one skincluster might have to change it here
+            skin_cluster = pm.skinCluster(joint_list, mesh, toSelectedBones=True, name=skin_list[0])
+            print(f'Created new skin cluster: {skin_cluster}')
+
+        # Apply skin weights
+        pm.deformerWeights(xml_file, path=modify_path, im=True, method='index', deformer=skin_cluster)
+        print(f'Skin weights applied successfully with {xml_file} data on {xml_file_name} with {skin_cluster}.')
+        if not attribute.checkAttributeExists(xml_file_name, tagName):
+            attribute.createTags(node=xml_file_name, tagName=tagName, tagValue=tagValue)
+    print('---- FINISHED importing tagged Skin Weight Maps ----')
 
 def copySkinToo(source_mesh, target_meshes):
     # Get the source mesh (with skin)
@@ -136,7 +155,6 @@ def copySkinToo(source_mesh, target_meshes):
     if not source_skin_cluster:
         pm.warning(f"No skin cluster found on {source_mesh}.")
         return
-
     source_skin_cluster = source_skin_cluster[0]
     influences = source_skin_cluster.getInfluence()
 
