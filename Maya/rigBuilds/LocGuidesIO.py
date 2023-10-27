@@ -147,15 +147,12 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
     Date: 06/05/2023
     Version: 1.0.0
     '''
-    exists, filePath = Checker.checkIfFilePathsExist(filePath)
-    # filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
-    filePath = os.path.join(filePath, '/', 'locGuideData.json')
 
-    if not os.path.exists(filePath):
-        pm.warning(f"The file {filePath} does not exist.")
-        return
+    print('---- STARTING to load in LocGuides Data ----')
+    exists, filePaths = Checker.checkIfFilePathsExist(filePath)
+    filePaths = os.path.join(filePaths, 'locGuideData.json')
 
-    with open(filePath, 'r') as json_file:
+    with open(filePaths, 'r') as json_file:
         dataList = json.load(json_file)
 
     for num, data in enumerate(dataList):
@@ -164,7 +161,6 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
             # convert nodeName string to PyNode
             node = pm.PyNode(nodeName)
             for axis, val in attrs.items():
-                # print(axis, val)
                 if node.attr(axis).isLocked():
                     print(f"The attribute {nodeName}.{axis} is locked.")
                     continue
@@ -173,5 +169,7 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
                         pm.setAttr('{}.{}'.format(nodeName, axis), val)
                     except RuntimeError:
                         print(
-                            f"Could not set value for attribute {nodeName}.{axis}. It may be connected to another attribute.")
+                            f"Could not set value for attribute {nodeName}.{axis} /n"
+                            f". It may be connected to another attribute.")
+    print('---- Finished loading in LocGuides Data ----')
     return dataList

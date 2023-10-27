@@ -81,19 +81,18 @@ class controlCurves():
         Side_Discription01_buffer01_TYPE        :   C_Objects01_adj01_GRP       :   Controls adjustment group name
 
         GROUP           : GRP
-        SUB GROUP       : C
+        SUB GROUP       : SUB
         Controls        : CNT
         Constraint      : CONST
+        joints          : JNT
         """
 
         # Var
         # control Suffix Name
         self.CSN = "CNT"
         self.SUB = "SUB"
-        # ex C_name0
-        self.fullName = side + '_' + name
-        # ex C_nameSub0
-        self.subFullName =side + '_' + name + self.SUB
+        self.fullName = side + '_' + name  # ex C_name0
+        self.subFullName =side + '_' + name + self.SUB # ex C_nameSub0
         self.finalFullName = None
         self.controlNode = None
         self.controlNames = None
@@ -529,7 +528,6 @@ class controlCurves():
                 pass
 
         # set colour on locator
-
         mainLocShape = self.controlNames.getShapes()
         for mama in mainLocShape:
             mama.overrideEnabled.set(1)
