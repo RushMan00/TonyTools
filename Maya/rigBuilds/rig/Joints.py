@@ -1,6 +1,6 @@
 import pymel.core as pm
+import maya.cmds as cmds
 import importlib as imp
-
 from rigBuilds import attribute
 imp.reload(attribute)
 
@@ -9,6 +9,7 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
                      primaryAxis='xyz',
                      secondaryAxisOrient = 'yup',
                      orientJointEnd=True,
+                     chain=True,
                      tag=True,
                      ):
     '''
@@ -41,44 +42,46 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
     Version: 1.0.0
     '''
 
-    JntList = []
     jointList = []
-    otherJntList = []
-    otherJntList.append(parent)
-
+    ChainedJntList = []
+    ChainedJntList.append(parent)
     for guideNd in guideList:
-        # delete existing chain from scene
+        cmds.select(clear=True)
+        # delete existing joint chain from scene
         jntName = guideNd.replace('_GDE', '_JNT')
-        if pm.objExists(jntName):
-            pm.delete(jntName)
+        if cmds.objExists(jntName):
+            cmds.delete(jntName)
         # create joints
-        gde = pm.PyNode(guideNd)
-        jnts = pm.joint(
+        translation = cmds.getAttr(guideNd+".translate")[0]
+        rotation = cmds.getAttr(guideNd+".rotate")[0]
+        jnts = cmds.joint(
                         n=jntName,
-                        p=gde.translate.get(),
-                        o=gde.rotate.get(),
+                        p=translation,
+                        o=rotation,
                         )
-
+        cmds.select(jnts, d=True)
         jointList.append(jnts)
-        JntList.append(jnts)
-        # parent - create the joint chian
-        pm.parent(jnts, otherJntList[-1])
-        otherJntList.append(jnts)
+        if chain:
+            # parent - create the joint chian
+            cmds.parent(jnts, ChainedJntList[-1])
+            ChainedJntList.append(jnts)
+        else:
+            cmds.parent(jnts, ChainedJntList)
         # tag
         if tag:
             attribute.createTags(node=jnts, tagName='joint', tagValue='JNT')
 
     # Orient the joint chain
-    pm.select(JntList)
-    pm.joint(e=True, oj=primaryAxis,
-             secondaryAxisOrient=secondaryAxisOrient,
-             ch=True, zso=True)
+    cmds.select(jointList)
+    cmds.joint(e=True, oj=primaryAxis,
+               secondaryAxisOrient=secondaryAxisOrient,
+               ch=True, zso=True)
     # Orient the end joint
-    pm.select(JntList[-1])
-    pm.joint(e=True, oj='none',ch=True, zso=orientJointEnd)
-    pm.select(JntList[-1], deselect=True)
+    cmds.select(jointList[-1])
+    cmds.joint(e=True, oj='none',ch=True, zso=orientJointEnd)
+    cmds.select(jointList[-1], deselect=True)
 
-    return JntList
+    return jointList
 
 def addJointsAlongCurve(side='C',
                         name='JointControl',
@@ -90,15 +93,15 @@ def addJointsAlongCurve(side='C',
                         ):
     fullname = '{}_{}'.format(side,name)
 
-    if numJoints <3:
-        pm.warning('numJoints must be more than 3')
+    if numJoints < 3:
+        cmds.warning('numJoints must be more than 3')
 
     realCrv = pm.PyNode(curve)
     crvdup = pm.duplicate(curve)
     crv = pm.rename(crvdup, name+'DUP')
     # rebuild the curve with x amount of points with 1 Linear NOT 3Cubic
     rebldCrv = pm.rebuildCurve(crv, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0,
-                                kep=1, kt=0, s=numJoints+1, d=1, tol=0.01)
+                               kep=1, kt=0, s=numJoints+1, d=1, tol=0.01)
     pycrv = pm.PyNode(crv)
     jointList = [crv]
 
@@ -122,7 +125,6 @@ def addJointsAlongCurve(side='C',
     jointList.pop(0)
     grp = pm.group(n=fullname+'_GRP')
     pm.parent(jointList, grp)
-    # pm.parent(grp, jointList)
 
     if parent:
         pm.parent(grp,parent)
