@@ -1,3 +1,5 @@
+import maya.OpenMaya as om
+import maya.cmds as cmds
 import pymel.core as pm
 
 def createTags(node='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
@@ -103,3 +105,47 @@ def checkAttributeExists(objectName, attributeName):
             return False, print('No, the attribute does not exist.')
     else:
         print(f"The object '{objectName}' does not exist in the scene.")
+
+def getShapeNodes(nodeName='C_object_CNT'):
+    """
+    This function retrieves all the shape nodes under a given transform node using the OpenMaya API.
+
+    Args:
+    transformNodeName (str): The name of the transform node for which you want to retrieve the shape nodes.
+
+    Returns:
+    list: A list of strings, where each string is the name of a shape node under the given transform node.
+    An empty list is returned if the node does not exist, is not a transform node, or if there are no shape nodes under it.
+
+    Example Usage:
+    shapeNodes = getShapeNodes('myTransformNode')
+    print(shapeNodes)
+    """
+    # Check if the node exists
+    if not cmds.objExists(nodeName):
+        print("Error: Node does not exist.")
+        return []
+
+    # Get the MObject for the given node
+    selectionList = om.MSelectionList()
+    selectionList.add(nodeName)
+    node = om.MObject()
+    selectionList.getDependNode(0, node)
+
+    # Check if the MObject is a transform
+    if not node.hasFn(om.MFn.kTransform):
+        print("Error: Specified node is not a transform node.")
+        return []
+
+    # Get the shapes under the transform
+    dagNode = om.MFnDagNode(node)
+    shapeNames = []
+    for i in range(dagNode.childCount()):
+        child = dagNode.child(i)
+        if child.hasFn(om.MFn.kShape):
+            shapeFn = om.MFnDagNode(child)
+            shapeName = shapeFn.name()
+            shapeNames.append(shapeName)
+
+    return shapeNames
+
