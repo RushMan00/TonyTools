@@ -122,6 +122,9 @@ def getShapeNodes(nodeName='C_object_CNT'):
     print(shapeNodes)
     """
     # Check if the node exists
+
+    # if list is less than one
+    # else list iis more than one elements
     if not cmds.objExists(nodeName):
         print("Error: Node does not exist.")
         return []
