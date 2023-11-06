@@ -1,9 +1,11 @@
 import maya.cmds as cmds
 import pymel.core as pm
+import importlib as imp
+
 from rigBuilds import attribute
+imp.reload(attribute)
+
 import logging
-
-
 _logger = logging.getLogger(__name__)
 
 class controlCurves():
@@ -183,10 +185,11 @@ class controlCurves():
 
     # ================================ THE CONTROL LIBRARY ================================
     # --- ACME CONTROL
+    # TODO FIXTHIS
     def acmeControl(self):
         self.innerCountShape = 0
         """ACME usually for things to put any attrs or pramas for over all rig """
-        starcurve = pm.curve(name=self.finalFullName + "_star" + str(self.innerCountShape) + "_" + self.CSN,
+        starcurve = cmds.curve(name=self.finalFullName + "_star" + str(self.innerCountShape) + "_" + self.CSN,
                              r=False, d=1,  # k = True, a = True,
                              p=[
                                (-2.2107888630062657e-16, 0.0, -0.9956507899629861),
@@ -201,51 +204,64 @@ class controlCurves():
                                (0.24952876335791102, 0.0, -0.2792005778709364),
                                (-2.2107888630062657e-16, 0.0, -0.9956507899629861),
                            ])
-        circleCurve = pm.circle(name=self.finalFullName + "_circle" + str(self.innerCountShape) + "_" + self.CSN,
-                                nr=[0,180,0], ch = 0)[0]
+        circleCurve = cmds.circle(name=self.finalFullName + "_circle" + str(self.innerCountShape) + "_" + self.CSN,
+                                nr=[0, 180, 0], ch = 0)[0]
         self.controlNames = pm.group(em=True, n=self.finalFullName + "_" + self.CSN)
         self.controlNode = pm.parent(starcurve.getShape(), circleCurve.getShape(), self.controlNames, s=True, r=True)
         pm.delete(starcurve, circleCurve)
+        self.controlNames = self.controlNames.name()
+        print('A_A_A_A_A_A_A_A')
+        print(self.controlNames)
     # End of ACME CONTROL
 
     # --- Circle CONTROL
     def circleControl(self):
         """circle control """
-        self.controlNames = pm.circle(name=self.finalFullName + "_" + self.CSN,
-                                      nr=[0,180,0], r=1, s=8, ch=0)
+        self.controlNames = cmds.circle(name=self.finalFullName + "_" + self.CSN,
+                                        nr=[0, 180, 0], r=1, s=8, ch=0)
 
     def globalControl(self):
-
+        crvNames =[]
         self.innerCountShape = 0
         """ACME usually for things to put any attrs or pramas for over all rig """
-        tricurve = pm.curve(name=self.finalFullName + "_triangle" + str(self.innerCountShape) + "_" + self.CSN,
-                             r=False, d=1,  # k = True, a = True,
-                             p=[
+        tricurve = cmds.curve(name=self.finalFullName + "_triangle" + str(self.innerCountShape) + "_" + self.CSN,
+                              r=False, d=1,  # k = True, a = True,
+                              p=[
                                  (-0.6687143531977059, 0.0, 1.1278843667738405),
                                  (0.0, 0.0, 1.8020994704795177),
                                  (0.6687143531977059, 0.0, 1.1278843667738405),
                                  (-0.6687143531977059, 0.0, 1.1278843667738405),
-                             ])
-        circleCurve = pm.circle(name=self.finalFullName + "_circle" + str(self.innerCountShape) + "_" + self.CSN,
-                                nr=[0, 180, 0], ch=0)[0]
-        self.controlNames = pm.group(em=True, n=self.finalFullName + "_" + self.CSN)
-        self.controlNode = pm.parent(tricurve.getShape(), circleCurve.getShape(), self.controlNames, s=True,
-                                     r=True)
-        pm.delete(tricurve, circleCurve)
+                                ])
+        shapes = cmds.listRelatives(tricurve, shapes=True)
+        cmds.rename(shapes,
+                    self.finalFullName + "_triangle" + str(self.innerCountShape) + "_" + self.CSN + 'Shape')
+        circleCurve = cmds.circle(name=self.finalFullName + "_circle" + str(self.innerCountShape) + "_" + self.CSN,
+                                  nr=[0, 180, 0], ch=0)
+        crvNames.append(tricurve)
+        crvNames.append(circleCurve[0])
 
+        self.controlNames = cmds.group(em=True, n=self.finalFullName + "_" + self.CSN)
+
+        for crvName in crvNames:
+            shapes = cmds.listRelatives(crvName, shapes=True, fullPath=True) or []
+            for shape in shapes:
+                cmds.parent(shape, self.controlNames, shape=True, relative=True)
+        for crvName in crvNames:
+            cmds.delete(crvName)
     # End of Circle CONTROL
+
     def HexControl(self):
         """Hex control """
-        self.controlNames = pm.circle(name=self.finalFullName + "_" + self.CSN,
-                                      nr=[0,180,0], r=1, s=8, d=1, ch=0)
+        self.controlNames = cmds.circle(name=self.finalFullName + "_" + self.CSN,
+                                        nr=[0, 180, 0], r=1, s=8, d=1, ch=0)
     # End of Circle CONTROL
     # --- GOD CONTROL
     def godControl(self):
         crvNames = []
         rotateTo = 90
-        for i in range(4):
+        for nums in range(4):
             # create arrow curves
-            arrowCrvName = pm.curve(name=self.finalFullName + "_GodArrow%s" % i + '_CNT', r=False, d=1,
+            arrowCrvName = cmds.curve(name=self.finalFullName + "_GodArrow" + str(nums) + '_CNT', r=False, d=1,
                                       # k = True, a = True,
                                       p=[
                                           (-0.24976468221459797, 0.0, -0.9990587288583922),
@@ -256,8 +272,13 @@ class controlCurves():
                                           (0.24976468221459822, 0.0, -1.4985880932875884),
                                           (0.24976468221459813, 0.0, -0.9990587288583922),
                                       ])
+            cmds.rename(cmds.listRelatives(arrowCrvName, shapes=True),
+                        self.finalFullName + '_GodArrow' + str(nums) + "_" + self.CSN + 'Shape')
+            cmds.setAttr(arrowCrvName + '.ry', rotateTo * nums)
+            cmds.makeIdentity(arrowCrvName, apply=True, translate=True, rotate=True, scale=True)
+
             # create quarter of a circle
-            circleCrvName = pm.curve(name=self.finalFullName + "_GodCircle%s" % i + '_CNT', r=False, d=1,
+            circleCrvName = cmds.curve(name=self.finalFullName + '_GodCircle' + str(nums) + '_CNT', r=False, d=1,
                                        # k = True, a = True,
                                        p=[
                                            (-0.24976468221459794, 0.0, -0.9990587288583922),
@@ -272,22 +293,27 @@ class controlCurves():
                                            (-0.9923691210919247, 0.0, -0.296591936579868),
                                            (-0.9990587288583918, 0.0, -0.24976468221459822),
                                        ])
-            arrowCrvName.setRotation([0, rotateTo * i, 0])
-            circleCrvName.setRotation([0, rotateTo * i, 0])
+            cmds.rename(cmds.listRelatives(circleCrvName, shapes=True),
+                        self.finalFullName + "_GodCircle" + str(nums) + "_" + self.CSN + 'Shape')
+            cmds.setAttr(circleCrvName + '.ry', rotateTo * nums)
+            cmds.makeIdentity(circleCrvName, apply=True, translate=True, rotate=True, scale=True)
+
             crvNames.append(arrowCrvName)
             crvNames.append(circleCrvName)
 
-        # creating control grp and storing shape under group
-        self.controlNames = pm.group(em=True, n=self.finalFullName + "_" + self.CSN)
-        for i in crvNames:
-            pm.makeIdentity(i, a=True, t=1, r=1, s=1, pn=1, n=0)
-            self.controlNode = pm.parent(i.getShape(), self.controlNames, s=True, r=True)
-            pm.delete(i)
+        # creating control grp and storing shape under Curve group
+        self.controlNames = cmds.group(em=True, n=self.finalFullName + "_" + self.CSN)
+        for crvName in crvNames:
+            shapes = cmds.listRelatives(crvName, shapes=True, fullPath=True) or []
+            for shape in shapes:
+                cmds.parent(shape, self.controlNames, shape=True, relative=True)
+        for crvName in crvNames:
+            cmds.delete(crvName)
     # END OF GOD CONTROL
 
     # --- Pyramid CONTROL
     def pyramidControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
                                        r=False, d=1,  # k = True, a = True,
                                        p=[(-0.7071066498756409, -0.5400000214576721, -0.70710688829422),
                                           (-0.7071068286895752, -0.5400000214576721, 0.7071067094802856),
@@ -303,47 +329,46 @@ class controlCurves():
                                           ])
     # END of pyramidControl
 
-
     # --- CUBE CONTROL
     def cubeControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
-                                     r=False, d=1,  # k = True, a = True,*
-                   p=[
-                       (-0.5, 0.5, 0.5),
-                       (-0.5, 0.5, -0.5),
-                       (-0.5, -0.5, -0.5),
-                       (0.5, -0.5, -0.5),
-                       (0.5, 0.5, -0.5),
-                       (0.5, 0.5, 0.5),
-                       (0.5, -0.5, 0.5),
-                       (-0.5, -0.5, 0.5),
-                       (-0.5, 0.5, 0.5),
-                       (0.5, 0.5, 0.5),
-                       (0.5, -0.5, 0.5),
-                       (0.5, -0.5, -0.5),
-                       (0.5, 0.5, -0.5),
-                       (-0.5, 0.5, -0.5),
-                       (-0.5, -0.5, -0.5),
-                       (-0.5, -0.5, 0.5),
-                   ])
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
+                                       r=False, d=1,  # k = True, a = True,*
+                                       p=[
+                                           (-0.5, 0.5, 0.5),
+                                           (-0.5, 0.5, -0.5),
+                                           (-0.5, -0.5, -0.5),
+                                           (0.5, -0.5, -0.5),
+                                           (0.5, 0.5, -0.5),
+                                           (0.5, 0.5, 0.5),
+                                           (0.5, -0.5, 0.5),
+                                           (-0.5, -0.5, 0.5),
+                                           (-0.5, 0.5, 0.5),
+                                           (0.5, 0.5, 0.5),
+                                           (0.5, -0.5, 0.5),
+                                           (0.5, -0.5, -0.5),
+                                           (0.5, 0.5, -0.5),
+                                           (-0.5, 0.5, -0.5),
+                                           (-0.5, -0.5, -0.5),
+                                           (-0.5, -0.5, 0.5),
+                                       ])
         # End of cubeControl
 
     # --- SQUARE CONTROL
     def squareControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
-                                     r=False, d=1,  # k = True, a = True,
-                                     p=[
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
+                                       r=False, d=1,  # k = True, a = True,
+                                       p=[
                                         (0.5, 1.1102230246251565e-16, -0.5),
                                         (0.5, -1.1102230246251565e-16, 0.5),
                                         (-0.5, -1.1102230246251565e-16, 0.5),
                                         (-0.5, 1.1102230246251565e-16, -0.5),
                                         (0.5, 1.1102230246251565e-16, -0.5),
-                                       ])
+                                         ])
     # END OF squareControl
 
     # --- arrowoutward Control
     def arrowoutwardControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
                                        r=False, d=1,  # k = True, a = True,
                                        p=[
                                            (-0.5934552956583314, 0.0, 0.5934552956583314),
@@ -384,7 +409,7 @@ class controlCurves():
 
     # --- pinsquare Control
     def pinsquareControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
                                        r=False, d=1,  # k = True, a = True,
                                        p=[
                                            (0.0, 0.0, 0.0),
@@ -399,40 +424,40 @@ class controlCurves():
 
     # --- arrow Control
     def arrowControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
-                                     r=False, d=1,  # k = True, a = True,
-                                     p=[
-                                        (-0.328797177570344, 0.0, 1.315188710281376),
-                                        (0.328797177570344, 0.0, 1.315188710281376),
-                                        (0.328797177570344, 0.0, 0.0),
-                                        (0.986391532711032, 0.0, 0.0),
-                                        (0.0, 0.0, -0.986391532711032),
-                                        (-0.986391532711032, 0.0, 0.0),
-                                        (-0.328797177570344, 0.0, 0.0),
-                                        (-0.328797177570344, 0.0, 1.315188710281376),
-                                        ])
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
+                                       r=False, d=1,  # k = True, a = True,
+                                       p=[
+                                            (-0.328797177570344, 0.0, 1.315188710281376),
+                                            (0.328797177570344, 0.0, 1.315188710281376),
+                                            (0.328797177570344, 0.0, 0.0),
+                                            (0.986391532711032, 0.0, 0.0),
+                                            (0.0, 0.0, -0.986391532711032),
+                                            (-0.986391532711032, 0.0, 0.0),
+                                            (-0.328797177570344, 0.0, 0.0),
+                                            (-0.328797177570344, 0.0, 1.315188710281376),
+                                            ])
     # End of arrowControl
 
     # --- triangle Control
     def triangleControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
-                                     r=False, d=1,  # k = True, a = True,
-                                     p=[
-                                        (-0.328797177570344, 0.0, 1.315188710281376),
-                                        (0.328797177570344, 0.0, 1.315188710281376),
-                                        (0.328797177570344, 0.0, 0.0),
-                                        (0.986391532711032, 0.0, 0.0),
-                                        (0.0, 0.0, -0.986391532711032),
-                                        (-0.986391532711032, 0.0, 0.0),
-                                        (-0.328797177570344, 0.0, 0.0),
-                                        (-0.328797177570344, 0.0, 1.315188710281376),
-                                       ])
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
+                                       r=False, d=1,  # k = True, a = True,
+                                       p=[
+                                          (-0.328797177570344, 0.0, 1.315188710281376),
+                                          (0.328797177570344, 0.0, 1.315188710281376),
+                                          (0.328797177570344, 0.0, 0.0),
+                                          (0.986391532711032, 0.0, 0.0),
+                                          (0.0, 0.0, -0.986391532711032),
+                                          (-0.986391532711032, 0.0, 0.0),
+                                          (-0.328797177570344, 0.0, 0.0),
+                                          (-0.328797177570344, 0.0, 1.315188710281376),
+                                         ])
 
     # End of triangleControl
 
     # --- star Control
     def starControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
                                        r=False, d=1,  # k = True, a = True,
                                        p=[
                                            (-0.9956507899629861, 0.0, 0.0),
@@ -451,7 +476,7 @@ class controlCurves():
 
     #--- gear Control
     def gearControl(self):
-        self.controlNames = pm.curve(name=self.finalFullName + "_" + self.CSN,
+        self.controlNames = cmds.curve(name=self.finalFullName + "_" + self.CSN,
                                        r=False, d=1,  # k = True, a = True,
                                        p=[
                                            (-0.02792703607711131, 0.0, -1.009885145746707),
@@ -499,85 +524,73 @@ class controlCurves():
     # End of gearControl
 
     def __createGrpsandSubGrps(self):
-
-        name = self.finalFullName
-        MainControlCrv = pm.PyNode(self.controlNames)
+        # print(self.controlNames)
+        # self.controlNames = pm.PyNode(self.controlNames)
+        self.controlNames = self.controlNames
 
         # --- creating adj/buffer groups
-        mainGrpName = pm.group(MainControlCrv, n=name + '_GRP')
+        mainGrpName = cmds.group(self.controlNames, n=self.finalFullName + '_GRP')
         self.finishedGrpLst.append(mainGrpName)
         for i in range(self.adjGrpNumber):
-            grp = pm.group(MainControlCrv, n=name+ "_" + 'Adj' + str(i) + '_GRP')
+            grp = cmds.group(self.controlNames, n=self.finalFullName + "_" + 'Adj' + str(i) + '_GRP')
             self.finishedGrpLst.append(grp)
-        self.finishedGrpLst.append(MainControlCrv)
+        self.finishedGrpLst.append(self.controlNames)
 
         # find matrix of parent and set it on the child
         if self.parent[0]:
-            parent = pm.PyNode(self.parent[0])
-            parentMatrix = parent.getMatrix()
-            mainGrpName.setMatrix(parentMatrix)
+            matrix = cmds.xform(self.parent[0], query=True, matrix=True, worldSpace=True)
+            cmds.xform(mainGrpName, matrix=matrix, worldSpace=True)
             # END OF adj/buffer groups
             if self.parentOrConst:
                 if self.parentOrConst == 'parent':
-                    pm.parent(self.parent, MainControlCrv)
+                    cmds.parent(self.parent, self.controlNames)
 
                 elif self.parentOrConst == 'const':
-                    bah = pm.parentConstraint(MainControlCrv, self.parent[0], mo=False, n=self.fullName+'Const')
+                    bah = cmds.parentConstraint(self.controlNames, self.parent[0], mo=False,
+                                                n=f'{self.fullName}{str(self.iterCounts)}_Const')
                     # End of  parent Constraints
             else:
                 pass
 
-        # set colour on locator
-        mainLocShape = self.controlNames.getShapes()
-        for mama in mainLocShape:
-            mama.overrideEnabled.set(1)
-            mama.overrideColor.set(self.color)
+        # converting pymel to Sting because pymel node starts breaking here?
+        print('this is it!')
+        allShapes = attribute.getShapeNodes(nodeName=self.controlNames)
+        # set colour on locator shapes
+        for ctlName in allShapes:
+            cmds.setAttr(ctlName + '.overrideEnabled', 1)
+            cmds.setAttr(ctlName + '.overrideColor', self.color)
 
         # TODO : make sub controls
         # --- creating sub adj/buffer groups
         # END OF sub adj/buffer groups
 
-        # --- move the shape of the controls
-        for i in MainControlCrv.getShapes():
-            a = str(i.getName())
-            spans = pm.getAttr(i + '.spans')
-            allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
-            """
-            to scale curve without effecting scale xyz attrs
-            how it works: grab all the verties and scaling/rotating it together
-            """
-            # # pymel dont work? Find out why
-            # # scaling the shape
-            # pm.scale(self.scale, self.scale, self.scale, allSpans, a=True, ws=True)
-            # # rotating the shape
-            # pm.rotate(self.rotate[0], self.rotate[1], self.rotate[2], i + '.cv[0:%s]' % allSpans)
+        # --- move position Shape Controls
+        for ctlName in allShapes:
+            # shapeName = ctlName + 'Shape'
+            spans = cmds.getAttr(ctlName + '.spans')
+            allSpans = cmds.ls(ctlName + '.cv[0:%s]' % spans, fl=True)
 
-            # for now this works
             # scaling the shape
             cmds.scale(self.scale, self.scale, self.scale, allSpans, r=True)
             # rotating the shape
-            cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], i + '.cv[0:%s]' % len(allSpans))
+            cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], ctlName + '.cv[0:%s]' % len(allSpans))
 
         # --- self.hook
         if self.hook:
-            pm.parent( self.finishedGrpLst[0], self.hook)
+            cmds.parent(self.finishedGrpLst[0], self.hook)
 
         # --- self.tag
         if self.tag:
-            attribute.createTags(node=MainControlCrv, tagName='type', tagValue='CNT')
+            attribute.createTags(node=self.controlNames[0], tagName='type', tagValue='CNT')
 
     # --- just get the Get pyNodes and Strings
     def __str__(self):
-        return [obj.name() for obj in self.finishedGrpLst][-1]
+        return self.finishedGrpLst[-1]
 
     def __repr__(self):
         return self.finishedGrpLst[-1]
 
-    # --- Get pyNodes and Strings
     def getInstancesList(self):
-        return [obj.name() for obj in self.finishedGrpLst]
-
-    def getPmInstancesList(self):
         return self.finishedGrpLst
 
     # Exacute process
