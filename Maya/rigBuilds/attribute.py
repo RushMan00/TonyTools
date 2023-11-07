@@ -7,50 +7,44 @@ def createTags(node='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
     FUNCTION:      createTags
     DESCRIPTION:   crates tags for easy selection
     USAGE:         tagged_objs = pm.ls('*.*myTag' == 'myTagValue')
-    RETURN:        None
+    RETURN:        String
     REQUIRES:      None
     Version        1.0.0
     Examples:      SKIN     :   skinweights
                    JOINTS   :   joints
     """
     # check if the object exists
-    if pm.objExists(node):
-        # get the PyNode object
-        obj = pm.PyNode(node)
+    if cmds.objExists(node):
         # add the custom attribute
-        obj.addAttr(tagName, dataType='string')
+        cmds.addAttr(node, longName=tagName, dataType='string')
         # set the value of the attribute
-        obj.attr(tagName).set(tagValue)
-
+        cmds.setAttr(f"{node}.{tagName}", tagValue, type='string')
     else:
-        pm.warning('Object ' + node + ' does not exist.')
+        cmds.warning(f'Object {node} does not exist.')
+    return f"{node}.{tagName}"
 
 def selectTags(tagName='SKIN'):
     """
     FUNCTION:      selectTags
     DESCRIPTION:   select tags for easy selection
     USAGE:         tagged_objs = pm.ls('*.*myTag' == 'myTagValue')
-    RETURN:        List of of oject names as
+    RETURN:        List of object names as 'SKIN'
     REQUIRES:      None
     Version        1.0.0
     """
-    # list all objects with the specified tag attribute
-    taggedObjs = []
-    for node in pm.ls(type='transform'):
-        if node.hasAttr(tagName):
-            taggedObjs.append(node)
+
+    # List all objects with the specified tag attribute
+    all_transforms = cmds.ls(type='transform')
+    taggedObjs = [obj for obj in all_transforms if cmds.attributeQuery(tagName, node=obj, exists=True)]
+
     if not taggedObjs:
-        pm.warning('No objects found with the tag attribute: {}'.format(tagName))
-    pm.select(taggedObjs)
+        cmds.warning('No objects found with the tag attribute: {}'.format(tagName))
 
-    # return listed name as string
-    strNameList = []
-    for bah in taggedObjs:
-        name = bah.name()
-        strNameList.append(name)
-    return strNameList
+    # Select the tagged objects
+    cmds.select(taggedObjs, replace=True)
 
-
+    # Return the names of these objects
+    return taggedObjs
 
 def toggleAttributeLock(node='C_Control0_CNT', unlock=False):
     """
@@ -61,30 +55,36 @@ def toggleAttributeLock(node='C_Control0_CNT', unlock=False):
     REQUIRES:      None
     Version        1.0.0
     """
-    if not pm.objExists(node):
+    if not cmds.objExists(node):
         return
+
     # If 'unlock' is False, we are in lock mode.
     if not unlock:
-        attrs = ['visibility'] if pm.nodeType(node) == 'mesh' else pm.listAttr(node, k=True)
+        # Check if the node is a mesh and set attributes accordingly
+        if cmds.nodeType(node) == 'mesh':
+            attrs = ['visibility']
+        else:
+            attrs = cmds.listAttr(node, keyable=True)
 
         if attrs:
             for attr in attrs:
                 try:
-                    pm.setAttr(f'{node}.{attr}', l=True, k=False)
+                    cmds.setAttr(f'{node}.{attr}', lock=True, keyable=False)
                 except:
                     continue
+
     # If 'unlock' is True, we are in unlock mode.
     else:
-        attrs = pm.listAttr(node, l=1)
+        attrs = cmds.listAttr(node, locked=True)
 
         if attrs:
             for attr in attrs:
                 try:
-                    pm.setAttr(f'{node}.{attr}', l=False, k=True)
+                    cmds.setAttr(f'{node}.{attr}', lock=False, keyable=True)
                 except:
                     continue
 
-def checkAttributeExists(objectName, attributeName):
+def checkAttributeExists(node, attributeName):
     """
     FUNCTION:      checkAttributeExists(object_name, attribute_name)
     DESCRIPTION:   Check if a specific attribute exists on a given object in Maya.
@@ -94,17 +94,16 @@ def checkAttributeExists(objectName, attributeName):
     Version        1.0.0
     """
     # Check if the object exists
-    if pm.objExists(objectName):
-        # Get the PyNode for the object
-        obj = pm.PyNode(objectName)
-
+    if cmds.objExists(node):
         # Check if the attribute exists
-        if obj.hasAttr(attributeName):
-            return True, print('Yes, the attribute exists.')
+        if cmds.attributeQuery(attributeName, node=node, exists=True):
+            print('Yes, the attribute exists.')
+            return True
         else:
-            return False, print('No, the attribute does not exist.')
+            print('No, the attribute does not exist.')
+            return False
     else:
-        print(f"The object '{objectName}' does not exist in the scene.")
+        print(f"The object '{node}' does not exist in the scene.")
 
 def getShapeNodes(nodeName='C_object_CNT'):
     """
@@ -122,7 +121,6 @@ def getShapeNodes(nodeName='C_object_CNT'):
     print(shapeNodes)
     """
     # Check if the node exists
-
     # if list is less than one
     # else list iis more than one elements
     if not cmds.objExists(nodeName):

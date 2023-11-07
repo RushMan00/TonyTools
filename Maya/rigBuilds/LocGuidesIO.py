@@ -39,16 +39,16 @@ def selectTaggedNodes(tagName='myTag'):
     Version: 1.0.0
     '''
 
-    # list all objects with the specified tag attribute
+    # List all objects with the specified tag attribute
     taggedObjs = []
-    for node in pm.ls(type='transform'):
-        if node.hasAttr(tagName):
+    for node in cmds.ls(type='transform'):
+        if cmds.attributeQuery(tagName, node=node, exists=True):
             taggedObjs.append(node)
+
     if not taggedObjs:
-        pm.warning('No objects found with the tag attribute: {}'.format(tagName))
+        cmds.warning('No objects found with the tag attribute: {}'.format(tagName))
     else:
-        # select the tagged objects
-        # pm.select(taggedObjs)
+        # Return the tagged objects
         return taggedObjs
 
 def writeLocGuidesData(tagName='node', filePath='\TonyTools\Maya\projects\pridapus\data'):
@@ -81,29 +81,33 @@ def writeLocGuidesData(tagName='node', filePath='\TonyTools\Maya\projects\pridap
     Version: 1.0.0
     '''
 
-    # find the LocGuides in the scene
+    def selectTaggedNodes(tagName):
+        taggedNodes = [node for node in cmds.ls(type='transform') if cmds.attributeQuery(tagName, node=node, exists=True)]
+        return taggedNodes if taggedNodes else None
+
+    # Find the LocGuides in the scene
     locs = selectTaggedNodes(tagName=tagName)
     if not locs:
         return
-    dataList = []
 
+    dataList = []
     for obj in locs:
         dataDict = {}
-        dataDict[obj.name()] = {
-                                "tx": obj.tx.get(),
-                                "ty": obj.ty.get(),
-                                "tz": obj.tz.get(),
-                                "rx": obj.rx.get(),
-                                "ry": obj.ry.get(),
-                                "rz": obj.rz.get()
-                                }
+        objName = cmds.ls(obj, long=True)[0]  # Get the full path name of the object
+        dataDict[objName] = {
+            "tx": cmds.getAttr(f"{obj}.translateX"),
+            "ty": cmds.getAttr(f"{obj}.translateY"),
+            "tz": cmds.getAttr(f"{obj}.translateZ"),
+            "rx": cmds.getAttr(f"{obj}.rotateX"),
+            "ry": cmds.getAttr(f"{obj}.rotateY"),
+            "rz": cmds.getAttr(f"{obj}.rotateZ")
+        }
         dataList.append(dataDict)
-    print(dataList)
 
     # Check if the directory exists
     filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
     if not os.path.exists(filePath):
-        pm.warning(f"The directory {filePath} does not exist.")
+        cmds.warning(f"The directory {filePath} does not exist.")
         return
 
     # Save data to JSON file
@@ -149,6 +153,8 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
     '''
 
     print('---- STARTING to load in LocGuides Data ----')
+
+    # Assuming 'Checker.checkIfFilePathsExist' is a valid function that returns a tuple
     exists, filePaths = Checker.checkIfFilePathsExist(filePath)
     filePaths = os.path.join(filePaths, 'locGuideData.json')
 
@@ -158,18 +164,19 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
     for num, data in enumerate(dataList):
         for nodeName, attrs in data.items():
             print(nodeName)
-            # convert nodeName string to PyNode
-            node = pm.PyNode(nodeName)
             for axis, val in attrs.items():
-                if node.attr(axis).isLocked():
-                    print(f"The attribute {nodeName}.{axis} is locked.")
+                attrName = '{}.{}'.format(nodeName, axis)
+                if cmds.getAttr(attrName, lock=True):
+                    print(f"The attribute {attrName} is locked.")
                     continue
                 else:
                     try:
-                        pm.setAttr('{}.{}'.format(nodeName, axis), val)
+                        cmds.setAttr(attrName, val)
                     except RuntimeError:
                         print(
-                            f"Could not set value for attribute {nodeName}.{axis} /n"
-                            f". It may be connected to another attribute.")
+                            f"Could not set value for attribute {attrName}.\n"
+                            "It may be connected to another attribute.")
+                        continue
+
     print('---- Finished loading in LocGuides Data ----')
     return dataList
