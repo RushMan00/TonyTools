@@ -114,16 +114,15 @@ class controlCurves():
 
         # # self.iterCounts += 1
         # self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
-        #
         # if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
         #     self.__checkingSides()
         #     self.iterCounts += 1
         # else:
         #     logging.warning(self.finalFullName + "same name exists in scene.")
 
-        for i in self.parent:
+        if self.parent:
             # setup Var
-            self.joint = i
+            # self.joint = i
             # self.iterCounts += 1
             self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
 
@@ -152,7 +151,7 @@ class controlCurves():
                 self.color = 6
                 self.__createControl()
         else:
-            pm.warning('Please specify a "side".')
+            cmds.warning('Please specify a "side".')
             return
     # End of __initialSetup
 
@@ -218,7 +217,7 @@ class controlCurves():
     def circleControl(self):
         """circle control """
         self.controlNames = cmds.circle(name=self.finalFullName + "_" + self.CSN,
-                                        nr=[0, 180, 0], r=1, s=8, ch=0)
+                                        nr=[0, 180, 0], r=1, s=8, ch=0)[0]
 
     def globalControl(self):
         crvNames =[]
@@ -538,7 +537,7 @@ class controlCurves():
 
         # find matrix of parent and set it on the child
         if self.parent[0]:
-            matrix = cmds.xform(self.parent[0], query=True, matrix=True, worldSpace=True)
+            matrix = cmds.xform(self.parent, query=True, matrix=True, worldSpace=True)
             cmds.xform(mainGrpName, matrix=matrix, worldSpace=True)
             # END OF adj/buffer groups
             if self.parentOrConst:
@@ -546,14 +545,13 @@ class controlCurves():
                     cmds.parent(self.parent, self.controlNames)
 
                 elif self.parentOrConst == 'const':
-                    bah = cmds.parentConstraint(self.controlNames, self.parent[0], mo=False,
+                    bah = cmds.parentConstraint(self.controlNames, self.parent, mo=False,
                                                 n=f'{self.fullName}{str(self.iterCounts)}_Const')
                     # End of  parent Constraints
             else:
                 pass
 
         # converting pymel to Sting because pymel node starts breaking here?
-        print('this is it!')
         allShapes = attribute.getShapeNodes(nodeName=self.controlNames)
         # set colour on locator shapes
         for ctlName in allShapes:
@@ -574,14 +572,14 @@ class controlCurves():
             cmds.scale(self.scale, self.scale, self.scale, allSpans, r=True)
             # rotating the shape
             cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], ctlName + '.cv[0:%s]' % len(allSpans))
-
         # --- self.hook
         if self.hook:
+            print('+_+_+_+_+_+_+_')
+            print(self.finishedGrpLst[0])
             cmds.parent(self.finishedGrpLst[0], self.hook)
-
         # --- self.tag
         if self.tag:
-            attribute.createTags(node=self.controlNames[0], tagName='type', tagValue='CNT')
+            attribute.createTags(nodeName=self.controlNames[0], tagName='type', tagValue='CNT')
 
     # --- just get the Get pyNodes and Strings
     def __str__(self):
