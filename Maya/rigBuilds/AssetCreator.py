@@ -1,8 +1,9 @@
 import os
 import shutil
-import pymel.core as pm
+import maya.cmds as cmds
 
 from rigBuilds import UI
+
 
 class AssetCreator():
     def __init__(self,
@@ -13,16 +14,16 @@ class AssetCreator():
         self.create_ui_window()
 
     def create_asset_folder(self, *args):
-        asset_path = pm.textField(self.asset_path_text_field, query=True, text=True)
+        asset_path = cmds.textField(self.asset_path_text_field, query=True, text=True)
 
         "find the modeling file of the asset, make sure to Check that path ends with .ma or .mb"
         if not asset_path.endswith(".ma") and not asset_path.endswith(".mb"):
-            pm.warning("Please make sure the Asset Path ends with .ma or .mb")
+            cmds.warning("Please make sure the Asset Path ends with .ma or .mb")
             return
 
         # Check if the file exists
         if not os.path.exists(asset_path):
-            pm.warning("The file does not exist at the provided path.")
+            cmds.warning("The file does not exist at the provided path.")
             return
 
         asset_name = os.path.splitext(os.path.basename(asset_path))[0]
@@ -30,7 +31,7 @@ class AssetCreator():
 
         # Check if the asset folder already exists
         if os.path.exists(asset_folder_path):
-            pm.warning(f"The asset folder '{asset_name}' already exists. Please choose a different asset name.")
+            cmds.warning(f"The asset folder '{asset_name}' already exists. Please choose a different asset name.")
             return
 
         # Create the asset folder
@@ -65,17 +66,17 @@ class AssetCreator():
         return
 
     def create_ui_window(self):
-        if pm.window("CreateNewAssetWindow", exists=True):
-            pm.deleteUI("CreateNewAssetWindow", window=True)
+        if cmds.window("CreateNewAssetWindow", exists=True):
+            cmds.deleteUI("CreateNewAssetWindow", window=True)
 
-        self.create_asset_window = pm.window("CreateNewAssetWindow", title="Create New Asset", widthHeight=(300, 120))
-        create_asset_layout = pm.columnLayout(adjustableColumn=True)
+        self.create_asset_window = cmds.window("CreateNewAssetWindow", title="Create New Asset", widthHeight=(300, 120))
+        create_asset_layout = cmds.columnLayout(adjustableColumn=True)
 
-        pm.text(label=" find the modeling file of the asset")
-        pm.text(label="copy and paste the path and include the file with extenstion (with .ma or .mb extension):")
-        pm.text(label= r'for example : C:\Users\kimoo\OneDrive\Desktop\cube.ma')
-        self.asset_path_text_field = pm.textField()
-        pm.button(label="Create the Asset Structure", command=self.create_asset_folder)
-        pm.text(label=r'This will add a name in the rigging UI Asset list, base on the file name')
-        pm.setParent('..')
-        pm.showWindow(self.create_asset_window)
+        cmds.text(label=" find the modeling file of the asset")
+        cmds.text(label="copy and paste the path and include the file with extenstion (with .ma or .mb extension):")
+        cmds.text(label= r'for example : C:\Users\kimoo\OneDrive\Desktop\cube.ma')
+        self.asset_path_text_field = cmds.textField()
+        cmds.button(label="Create the Asset Structure", command=self.create_asset_folder)
+        cmds.text(label=r'This will add a name in the rigging UI Asset list, base on the file name')
+        cmds.setParent('..')
+        cmds.showWindow(self.create_asset_window)
