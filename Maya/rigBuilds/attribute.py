@@ -2,7 +2,7 @@ import maya.OpenMaya as om
 import maya.cmds as cmds
 import pymel.core as pm
 
-def createTags(node='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
+def createTags(nodeName='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
     """
     FUNCTION:      createTags
     DESCRIPTION:   crates tags for easy selection
@@ -14,14 +14,14 @@ def createTags(node='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
                    JOINTS   :   joints
     """
     # check if the object exists
-    if cmds.objExists(node):
+    if cmds.objExists(nodeName):
         # add the custom attribute
-        cmds.addAttr(node, longName=tagName, dataType='string')
+        cmds.addAttr(nodeName, longName=tagName, dataType='string')
         # set the value of the attribute
-        cmds.setAttr(f"{node}.{tagName}", tagValue, type='string')
+        cmds.setAttr(f"{nodeName}.{tagName}", tagValue, type='string')
+        return f"{nodeName}.{tagName}"
     else:
-        cmds.warning(f'Object {node} does not exist.')
-    return f"{node}.{tagName}"
+        cmds.warning(f'Object {nodeName} does not exist.')
 
 def selectTags(tagName='SKIN'):
     """
