@@ -69,13 +69,14 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
             cmds.parent(jnts, ChainedJntList)
         # tag
         if tag:
-            attribute.createTags(node=jnts, tagName='joint', tagValue='JNT')
+            attribute.createTags(nodeName=jnts, tagName='joint', tagValue='JNT')
 
     # Orient the joint chain
     cmds.select(jointList)
     cmds.joint(e=True, oj=primaryAxis,
                secondaryAxisOrient=secondaryAxisOrient,
                ch=True, zso=True)
+
     # Orient the end joint
     cmds.select(jointList[-1])
     cmds.joint(e=True, oj='none',ch=True, zso=orientJointEnd)
