@@ -12,7 +12,7 @@ imp.reload(attribute)
 
 tagName = 'skinweight'
 tagValue = 'SKIN'
-tonyfilePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
+# tonyfilePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
 
 def tagAsSkin(object=[None]):
     """
@@ -24,21 +24,18 @@ def tagAsSkin(object=[None]):
     Returns:
         list: A list containing the names of tagged objects.
     """
-    # If input_list is not provided, default to an empty list
-    if object is None:
-        object = []
-    # Create a copy of the input_list to prevent modifying the original list
-    allObjects = object.copy()
+
+    allObjects = []
     # Get currently selected objects in the Maya scene
-    pm_objects = pm.ls(sl=1)
+    objects = cmds.ls(sl=1)
     # Add the names of selected objects to the allObjects list
-    allObjects.extend(pm_obj.name() for pm_obj in pm_objects)
+    allObjects.extend(objects)
     # Print the names of all tagged objects
-    for obj in allObjects:
+    for obj in cmds.ls(sl=1):
         # Tag all objects as SKIN
-        attribute.createTags(node=obj, tagName=tagName, tagValue=tagValue)
+        attribute.createTags(nodeName=obj, attrName=tagName, attrValue=tagValue)
     # return list of tagged SkinWeights
-    return allObjects
+    return objects
 
 def selectTaggedSkins():
     """
@@ -49,28 +46,29 @@ def selectTaggedSkins():
     return ListofObject
 
 def exportTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
-    # checking paths
-    if not Checker.checkIfFilePathsExist(filePath):
-        print('path is there continuing..')
-        # go though each object and save out the skinweight data
-        return
+    # check if paths exist
+    bools, paths = Checker.checkIfFilePathsExist(filePath)
 
+    # Assuming selectTaggedSkins is a function that returns a list of mesh names
     for objectName in selectTaggedSkins():
-        # Select the mesh with the skin cluster
-        mesh = pm.PyNode(objectName)
-        meshName = mesh.name()
+        # Check if the object exists in the scene
+        if not cmds.objExists(objectName):
+            print(f"{objectName} does not exist in the scene.")
+            continue
 
         # List the history of the geometry and find the skinCluster
-        history = pm.listHistory(meshName)
-        skinClusters = [node for node in history if isinstance(node, pm.nodetypes.SkinCluster)]
+        history = cmds.listHistory(objectName)
+        skinClusters = [node for node in history if cmds.nodeType(node) == 'skinCluster']
         if not skinClusters:
-            print(f"No skinCluster found on {meshName}")
-        print(f'there is {skinClusters[0].name()} on {meshName}')
+            print(f"No skinCluster found on {objectName}")
+            continue
+        print(f'There is {skinClusters[0]} on {objectName}')
 
-        # get skincluster name from geo
-        pm.deformerWeights(meshName+'.xml', path=filePath, df=skinClusters[0].name(),
-                           ex=True, sh=meshName, vc=True)
+        # Use os.path.join to ensure proper path construction
+        exportPath = os.path.join(filePath, objectName + '.xml')
 
+        # Export skin weights
+        cmds.deformerWeights(exportPath, deformer=skinClusters[0], export=True, method="index", shape=objectName)
 
 def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
     print('---- STARTING importing tagged Skin Weight Maps ----')
@@ -106,7 +104,7 @@ def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pri
             skin_list.append(skin_cluster_name)
 
         # Validate mesh exists
-        if not pm.objExists(xml_file_name):
+        if not cmds.objExists(xml_file_name):
             print(f"The object {xml_file_name} does not exist in the scene.")
             continue
 
@@ -114,13 +112,13 @@ def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pri
 
         # Validate all joints exist
         for joint in joint_list:
-            if not pm.objExists(joint):
+            if not cmds.objExists(joint):
                 print(f"The joint {joint} does not exist in the scene.")
                 return
 
         # Find or create skin cluster
         skin_cluster = None
-        skin_history = pm.listHistory(mesh, type='skinCluster')
+        skin_history = cmds.listHistory(mesh, type='skinCluster')
 
         # if there is skin cluster add in the joints that are not connected
         if skin_history:
@@ -146,7 +144,7 @@ def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pri
         pm.deformerWeights(xml_file, path=modify_path, im=True, method='index', deformer=skin_cluster)
         print(f'Skin weights applied successfully with {xml_file} data on {xml_file_name} with {skin_cluster}.')
         if not attribute.checkAttributeExists(xml_file_name, tagName):
-            attribute.createTags(node=xml_file_name, tagName=tagName, tagValue=tagValue)
+            attribute.createTags(nodeName=xml_file_name, attrName=tagName, attrValue=tagValue)
     print('---- FINISHED importing tagged Skin Weight Maps ----')
 
 def copySkinToo(source_mesh, target_meshes):
