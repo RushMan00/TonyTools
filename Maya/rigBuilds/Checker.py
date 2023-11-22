@@ -4,7 +4,7 @@ import json
 import os
 import importlib as imp
 
-def convert_slashes_to_double_backslashes(input_path=r'D:/OneDrive/TonyTools'):
+def convertSlashesToDoubleBackslashes(inputPath=r'D:/OneDrive/TonyTools'):
     """
     Converts all forward slashes in the given path to double backslashes.
 
@@ -15,11 +15,11 @@ def convert_slashes_to_double_backslashes(input_path=r'D:/OneDrive/TonyTools'):
     - str: The modified path with double backslashes.
     """
     # First, replace all single backslashes with double backslashes
-    modified_path = input_path.replace("\\", "\\\\")
+    modifiedPath = inputPath.replace("\\", "\\\\")
     # Then, replace all forward slashes with double backslashes
-    return modified_path.replace("/", "\\\\")
+    return modifiedPath.replace("/", "\\\\")
 
-def checkIfFilePathsExist(file_Path=r'D:/OneDrive/TonyTools'):
+def checkIfFilePathsExist(filePath=r'D:/OneDrive/TonyTools'):
     """
     Checks if the given directory exists after converting its slashes to double backslashes.
     It also prints out a message based on the result and returns the existence status and the modified path.
@@ -34,7 +34,7 @@ def checkIfFilePathsExist(file_Path=r'D:/OneDrive/TonyTools'):
     Usage Example:
     exists, modified_path = Checker.checkIfFilePathsExist('D:/Example/Path')
     """
-    filePath = convert_slashes_to_double_backslashes(file_Path)
+    filePath = convertSlashesToDoubleBackslashes(filePath)
     print(filePath)
     if not os.path.exists(filePath):
         print(f"The directory {filePath} does not exist or path is not correct. "
@@ -47,6 +47,15 @@ def checkIfFilePathsExist(file_Path=r'D:/OneDrive/TonyTools'):
 def checkIfObjectExist(obj_list=[]):
     for obj in obj_list:
         if not pm.objExists(obj):
+            print(f"Object '{obj}' doesn't exist")
+            return False
+
+    print("Object(s) exist")
+    return True
+
+def checkIfObjectExist2(objList=[]):
+    for obj in objList:
+        if not cmds.objExists(obj):
             print(f"Object '{obj}' doesn't exist")
             return False
 
