@@ -91,7 +91,7 @@ class locGuides():
             # crate locator
             name = self.side + '_' + guides + '_'
             mainLoc = pm.spaceLocator(n=name+self.prefixName)
-            attribute.createTags(nodeName=mainLoc.name(), tagName='locator', tagValue='LOC')
+            attribute.createTags(nodeName=mainLoc.name(), attrName='locator', attrValue='LOC')
             self.locList.append(mainLoc)
             locIter.append(mainLoc)
             pm.parent(mainLoc, self.chainList[-1])
