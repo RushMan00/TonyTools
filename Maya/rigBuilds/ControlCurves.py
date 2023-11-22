@@ -17,7 +17,7 @@ class controlCurves():
                  rotate=[0, 0, 0],
                  scale=1,
                  color=None,
-                 parent=[None],
+                 parent=None,
                  parentOrConst='parent',
                  adjGrpNumber=2,
                  hook = None,
@@ -95,7 +95,7 @@ class controlCurves():
         self.SUB = "SUB"
         self.fullName = side + '_' + name  # ex C_name0
         self.subFullName =side + '_' + name + self.SUB # ex C_nameSub0
-        self.finalFullName = None
+        self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
         self.controlNode = None
         self.controlNames = None
         self.finishedGrpLst = []
@@ -111,26 +111,11 @@ class controlCurves():
         self.__create()
 
     def __initialSetup(self):
-
-        # # self.iterCounts += 1
-        # self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
-        # if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
-        #     self.__checkingSides()
-        #     self.iterCounts += 1
-        # else:
-        #     logging.warning(self.finalFullName + "same name exists in scene.")
-
-        if self.parent:
-            # setup Var
-            # self.joint = i
-            # self.iterCounts += 1
-            self.finalFullName = self.side + '_' + self.name + str(self.iterCounts)
-
-            if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
-                self.__checkingSides()
-                self.iterCounts += 1
-            else:
-                logging.warning(self.finalFullName + "same name exists in scene.")
+        if not cmds.objExists(self.finalFullName + '_' + self.CSN ):
+            self.__checkingSides()
+            self.iterCounts += 1
+        else:
+            logging.warning(self.finalFullName + "same name exists in scene.")
 
     def __checkingSides(self):
         if self.side == 'C':
@@ -523,11 +508,8 @@ class controlCurves():
     # End of gearControl
 
     def __createGrpsandSubGrps(self):
-        # print(self.controlNames)
-        # self.controlNames = pm.PyNode(self.controlNames)
-        self.controlNames = self.controlNames
-
         # --- creating adj/buffer groups
+        print(self.controlNames)
         mainGrpName = cmds.group(self.controlNames, n=self.finalFullName + '_GRP')
         self.finishedGrpLst.append(mainGrpName)
         for i in range(self.adjGrpNumber):
@@ -536,7 +518,7 @@ class controlCurves():
         self.finishedGrpLst.append(self.controlNames)
 
         # find matrix of parent and set it on the child
-        if self.parent[0]:
+        if self.parent:
             matrix = cmds.xform(self.parent, query=True, matrix=True, worldSpace=True)
             cmds.xform(mainGrpName, matrix=matrix, worldSpace=True)
             # END OF adj/buffer groups
@@ -579,7 +561,7 @@ class controlCurves():
             cmds.parent(self.finishedGrpLst[0], self.hook)
         # --- self.tag
         if self.tag:
-            attribute.createTags(nodeName=self.controlNames[0], tagName='type', tagValue='CNT')
+            attribute.createTags(nodeName=self.controlNames[0], attrName='type', attrValue='CNT')
 
     # --- just get the Get pyNodes and Strings
     def __str__(self):
