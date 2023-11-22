@@ -1,5 +1,6 @@
-import importlib as imp
+import maya.cmds as cmds
 import pymel.core as pm
+import importlib as imp
 
 from rigBuilds.rig import Joints
 imp.reload(Joints)
@@ -19,6 +20,7 @@ class propCmds():
                  parentControlsTo='C_god0_CNT',
                  parentJointsGrpTo='SKELE',
                  jointChain=True,
+                 controlChain = True,
 
                  # TODO sub controls
                  subControls = True,
@@ -36,6 +38,7 @@ class propCmds():
         self.parentControlsTo = parentControlsTo
         self.parentJointsGrpTo = parentJointsGrpTo
         self.jointChain = jointChain
+        self.controlChain = controlChain
 
         # Vars
         self.fullName = '{}_{}'.format(side, name)
@@ -47,8 +50,9 @@ class propCmds():
 
     def __create(self):
         # main group for the joints
-        self.mainRigGroup = pm.group(n=self.fullName + "Joints_GRP", em=1,
-                                     parent=self.parentJointsGrpTo)
+        self.mainRigGroup = cmds.group(n=self.fullName + "Joints_GRP", em=1,
+                                       parent=self.parentJointsGrpTo)
+        cmds.select(clear=True)
 
         # create the joints
         self.jntList = Joints.createJointChain(guideList=self.guideList,
@@ -61,24 +65,27 @@ class propCmds():
 
         # create Curve controls
         print(f'creating for {self.jntList}')
-        for num, i in enumerate(self.jntList):
-            ControlCurves.controlCurves(name=self.name,
-                                        side=self.side,
-                                        num=num,
-                                        shape=self.shape,
-                                        rotate=self.controlRotation,
-                                        scale=self.controlSize,
-                                        parent=[i],
-                                        parentOrConst='const',
-                                        adjGrpNumber=1,
-                                        hook='C_god0_CNT',
-                                        tag=True,
-                                        )
+        for num, parent in enumerate(self.jntList):
+            cnt = ControlCurves.controlCurves(name=self.name,
+                                              side=self.side,
+                                              num=num,
+                                              shape=self.shape,
+                                              rotate=self.controlRotation,
+                                              scale=self.controlSize,
+                                              parent=parent,
+                                              parentOrConst='const',
+                                              adjGrpNumber=1,
+                                              hook='C_god0_CNT',
+                                              tag=True,
+                                              )
+
+        # if self.controlChain:
+        #     print('doing joint chain')
+
 
     def __cleanUp(self):
-        # # remove locatorGuides Group
-        # par = pm.listRelatives(self.guideList[0], parent=True)
-        # pm.delete(par)
+        # remove locatorGuides Group
+        cmds.delete(cmds.listRelatives(self.guideList[0], parent=True))
 
         pass
 
