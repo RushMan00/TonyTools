@@ -3,9 +3,11 @@ import sys
 import shutil
 import importlib
 import traceback
+
+import maya.cmds as cmds
 import pymel.core as pm
 
-from rigBuilds import AssetCreator, LoadMaFile, BaseRig, LocGuidesIO, SkinWeightIO, LocGuides, attribute
+from rigBuilds import AssetCreator, LoadMaFile, BaseRig, LocGuides, LocGuidesIO, SkinWeightIO, attribute
 
 importlib.reload(AssetCreator)
 importlib.reload(LoadMaFile)
@@ -17,21 +19,21 @@ importlib.reload(attribute)
 
 class riggingUI():
     def __init__(self):
-        self.window_name = "Tony Rigging Sys"
-        self.window_UI_node = None
+        self.windowName = "Tony Rigging Sys"
+        self.windowUINode = None
         self.paths = r"D:/OneDrive/TonyTools/Maya/projects"
         self.locGuidePaths = r'/data/locGuides'
         self.fullLocGuidePaths = None
         self.skinWeightPaths = r'/data/skinweights'
         self.fullSkinWeightPaths = None
-        # self.selected_item = None
+        # self.selectedItem = None
         self.folders = None
         self.folderIter = []
         self.module = None
-        self.option_menu_for_assets = None
-        self.create_asset_window = None
-        self.asset_path_text_field = None
-        self.selected_item = None
+        self.optionMenuForAssets = None
+        # self.create_asset_window = None
+        # self.asset_path_text_field = None
+        self.selectedItem = None
         # init
         self.create_ui_window()
 
@@ -40,22 +42,26 @@ class riggingUI():
     def AssetList(self, menu_control):
         "shows a list of current assets"
         # Clear the menu control
-        menu_control.deleteAllItems()
+        if cmds.menu(menu_control, exists=True):
+            items = cmds.menu(menu_control, query=True, itemArray=True) or []
+            for item in items:
+                cmds.deleteUI(item)
+
         # Get the list of folders in the directory
         self.folders = [folder for folder in os.listdir(self.paths) if
                         os.path.isdir(os.path.join(self.paths, folder))]
         # Add each folder to the menu control
         for folder in self.folders:
-            pm.menuItem(label=folder, parent=menu_control)
+            cmds.menuItem(label=folder, parent=menu_control)
 
     def getCurrentAssetFromList(self, *args):
         "to select the current item on the asset list"
-        self.selected_item = pm.optionMenu(self.option_menu_for_assets, query=True, value=True)
-        print("Selected Item:", self.selected_item)
+        self.selectedItem = cmds.optionMenu(self.optionMenuForAssets, query=True, value=True)
+        print("Selected Item:", self.selectedItem)
 
     def refreshAssetList(self, *args):
         # Refresh the asset list in the UI window
-        self.AssetList(self.option_menu_for_assets)
+        self.AssetList(self.optionMenuForAssets)
         print("Asset List is refreshed")
 
     # def createAssetStructure
@@ -69,32 +75,30 @@ class riggingUI():
     # --- Step 2 : Build Meshes Fuction
     # Create a function to handle the button click event
     def build_mesh_callback(self, *args):
-        pm.newFile(force=True)
+        cmds.file(force=True, new=True)
         self.getCurrentAssetFromList()
-        print(self.selected_item)
-        BaseRig.baseRig2(name=self.selected_item,
+        print(self.selectedItem)
+        BaseRig.baseRig2(name=self.selectedItem,
                          size=5)
-        # Load in model
-        main_model_paths = self.paths + '\{0}\model\{0}.ma'.format(self.selected_item)
-        LoadMaFile.load_ma_file(main_model_paths)
+        LoadMaFile.loadMaFile(self.paths + '/{0}/model/{0}.ma'.format(self.selectedItem))
         # Tag all Geos with Skin
-        meshes = pm.ls(type='mesh')
-        for mesh in meshes:
-            attribute.createTags(node=mesh, tagName='skin', tagValue='skinweights')
-            if mesh.getParent() != 'GEO':
-                pm.parent(mesh, 'GEO')
-        print("Build mesh from:", meshes)
-    # END OF Step 2 : Build Meshes Fuction
+        meshes = cmds.ls(type='mesh')
+        meshesTransforms = [cmds.listRelatives(mesh, parent=True)[0] for mesh in meshes]
+        for mesh in meshesTransforms:
+            attribute.createTags(nodeName=mesh, attrName='skin', attrValue='skinweights')
+            cmds.parent(mesh, 'GEO')
+            print("Build mesh from:", mesh)
+    # # END OF Step 2 : Build Meshes Fuction
 
     # --- Step 3 : create LocGuides
     # Create a function to handle the "Build Guides" button click event
     def call_create_guides(self, *args):
-        sys.path.append(self.paths + '\\' + self.selected_item)
-        self.module = importlib.import_module(self.selected_item)
+        sys.path.append(self.paths + '\\' + self.selectedItem)
+        self.module = importlib.import_module(self.selectedItem)
         importlib.reload(self.module)
         self.module.createGuides()
         print("Loading guides from folder:", self.paths)
-        self.fullLocGuidePaths = self.paths + '/' + self.selected_item + '/' + self.locGuidePaths
+        self.fullLocGuidePaths = self.paths + '/' + self.selectedItem + '/' + self.locGuidePaths
         loaded = LocGuidesIO.loadLocGuidesData(filePath=self.fullLocGuidePaths)
         print("Loading data from folder:", loaded)
 
@@ -115,7 +119,7 @@ class riggingUI():
     # Create a function to handle the "Build Rigs" button click event
     def build_rigs_callback(self, *args):
         try:
-            self.module = importlib.import_module(self.selected_item)
+            self.module = importlib.import_module(self.selectedItem)
             print("Imported module:", self.module)
             importlib.reload(self.module)
             self.module.createRig()
@@ -127,21 +131,21 @@ class riggingUI():
             traceback.print_exc()
             print("Error:", e)
 
-        # apply auto skin
-        # self.fullLocGuidePaths = self.paths + '/' + self.selected_item + '/' + self.locGuidePaths
-        # loaded = LocGuidesIO.loadLocGuidesData(filePath=self.fullLocGuidePaths)
-        # print("Building Rig from folder:", loaded)
+        # apply auto skin after building rig
+        self.fullSkinWeightPaths = self.paths + '/' + self.selectedItem + '/' + self.skinWeightPaths
+        loaded = SkinWeightIO.importTaggedSkinWeightMap(filePath=self.fullSkinWeightPaths)
+        print("Building Rig from folder:", loaded)
 
     # --- Load Skin
     def load_skins_callback(self, *args):
-        self.fullSkinWeightPaths = self.paths + '/' + self.selected_item + '/' + self.skinWeightPaths
+        self.fullSkinWeightPaths = self.paths + '/' + self.selectedItem + '/' + self.skinWeightPaths
         SkinWeightIO.importTaggedSkinWeightMap(self.fullSkinWeightPaths)
         print("load load_skins_callback from folder:")
 
     # --- Save Skin
     def save_skins_callback(self, *args):
         "save skinweight to path"
-        self.fullSkinWeightPaths = self.paths + '/' + self.selected_item + '/' + self.skinWeightPaths
+        self.fullSkinWeightPaths = self.paths + '/' + self.selectedItem + '/' + self.skinWeightPaths
         SkinWeightIO.exportTaggedSkinWeightMap(self.fullSkinWeightPaths)
         print("load save_skins_callback from folder:")
 
@@ -161,13 +165,13 @@ class riggingUI():
     # --- Step 5 : Clean up Rigs
     def clean_up_rig_from_callback(self, *args):
         try:
-            self.module = importlib.import_module(self.selected_item)
+            self.module = importlib.import_module(self.selectedItem)
             print("Imported module:", self.module)
             importlib.reload(self.module)
             self.module.cleanup()
             print("Called cleanup() in module")
 
-            print("Building Rig from folder:", self.paths)
+            print("activating Cleaning up Rig from folder:", self.paths)
 
         except Exception as e:
             traceback.print_exc()
@@ -181,70 +185,69 @@ class riggingUI():
         rigging UI
         """
         # Close existing window
-        if self.window_name and pm.window(self.window_name, exists=True):
-            pm.deleteUI(self.window_name, window=True)
+        if self.windowName and cmds.window(self.windowName, exists=True):
+            cmds.deleteUI(self.windowName, window=True)
 
         # Create UI window
-        self.window_UI_node = pm.window(self.window_name, title=self.window_name, widthHeight=(250, 500))
+        self.windowUINode = cmds.window(self.windowName, title=self.windowName, widthHeight=(250, 500))
         # Create a form layout
-        form_layout = pm.formLayout()
+        form_layout = cmds.formLayout()
 
         # --- Step 1 : create Asset Elements
-        step1Text = pm.text(label="Step 1: select an asset")
+        step1Text = cmds.text(label="Step 1: select an asset")
         # Create an optionMenu control
-        self.option_menu_for_assets = pm.optionMenu(label="Asset List")
+        self.optionMenuForAssets = cmds.optionMenu(label="Asset List")
         # Populate the folder list
-        self.AssetList(self.option_menu_for_assets)
+        self.AssetList(self.optionMenuForAssets)
         # Create a button to refresh the folder list
-        refreshButton = pm.button(label="refresh List", command=self.refreshAssetList)
+        refreshButton = cmds.button(label="refresh List", command=self.refreshAssetList)
         # Create a button to create the asset
-        create_asset_button = pm.button(label="Create Asset", command=self.create_asset)
+        create_asset_button = cmds.button(label="Create Asset", command=self.create_asset)
         # END OF Step 1
 
         # --- Step 2 : Load meshes
-        step2Text = pm.text(label="Step 2 : load in Mesh/Geo")
+        step2Text = cmds.text(label="Step 2 : load in Mesh/Geo")
         # Create a button to build the mesh
-        buildMeshButton = pm.button(label="Build Mesh", command=self.build_mesh_callback)
+        buildMeshButton = cmds.button(label="Build Mesh", command=self.build_mesh_callback)
         # END OF Step 2
 
         # --- Step 3 : Load LocGuides Elements
-        step3Text = pm.text(label="Step 3 : load in LocGuides")
+        step3Text = cmds.text(label="Step 3 : load in LocGuides")
         # Create a button to build guides
-        build_guides_button = pm.button(label="Build LocGuides", command=self.call_create_guides)
-        # build_guides_button = pm.button(label="Build LocGuides", command=self.call_create_guides)
+        build_guides_button = cmds.button(label="Build LocGuides", command=self.call_create_guides)
         # Create a button to load guides
-        load_guides_button = pm.button(label="Load LocGuides", command=self.load_guides_callback)
+        load_guides_button = cmds.button(label="Load LocGuides", command=self.load_guides_callback)
         # Create a button to save guides
-        save_guides_button = pm.button(label="Save LocGuides", command=self.save_guides_callback)
+        save_guides_button = cmds.button(label="Save LocGuides", command=self.save_guides_callback)
         # END OF Step 3 : Load LocGuides
 
         # --- Step 4 : create rigs Elements
-        step4Text = pm.text(label="Step 4 : Create Rig")
-        build_rigs_button = pm.button(label="Build Rigs", command=self.build_rigs_callback)
+        step4Text = cmds.text(label="Step 4 : Create Rig")
+        build_rigs_button = cmds.button(label="Build Rigs", command=self.build_rigs_callback)
         # Create a button to load skins
-        load_skin_button = pm.button(label="Load skins", command=self.load_skins_callback)
+        load_skin_button = cmds.button(label="Load skins", command=self.load_skins_callback)
         # Create a button to save skins
-        save_skin_button = pm.button(label="Save skins", command=self.save_skins_callback)
+        save_skin_button = cmds.button(label="Save skins", command=self.save_skins_callback)
         # Create a button to load skins
-        tag_skin_button = pm.button(label="tag skins", command=self.tag_skins_callback)
+        tag_skin_button = cmds.button(label="tag skins", command=self.tag_skins_callback)
         # Create a button to save skins
-        copy_skin_button = pm.button(label="copy skins to", command=self.copy_to_skin_callback)
+        copy_skin_button = cmds.button(label="copy skins to", command=self.copy_to_skin_callback)
         # END OF Step 4 : create rigs
 
         # --- clean up rigs
-        step5Text = pm.text(label="Step 5 : FINAL")
-        cleanup_button = pm.button(label="clean up Rig", command=self.clean_up_rig_from_callback)
+        step5Text = cmds.text(label="Step 5 : FINAL")
+        cleanup_button = cmds.button(label="clean up Rig", command=self.clean_up_rig_from_callback)
 
         # Position the UI elements within the form layout
-        pm.formLayout(form_layout, edit=True,
+        cmds.formLayout(form_layout, edit=True,
                       attachForm=[
                           # --- Step 1 : Asset list and Element position
                           (step1Text, 'top', 20),
                           (step1Text, "left", 10),
                           (step1Text, "right", 10),
 
-                          (self.option_menu_for_assets, "left", 10),
-                          (self.option_menu_for_assets, "right", 10),
+                          (self.optionMenuForAssets, "left", 10),
+                          (self.optionMenuForAssets, "right", 10),
 
                           (refreshButton, "left", 10),
                           (create_asset_button, "right", 10),
@@ -287,10 +290,10 @@ class riggingUI():
                       ],
                       attachControl=[
                           # --- Step 1 : Asset list Elements
-                          (self.option_menu_for_assets, "top", 10, step1Text),
-                          (refreshButton, "top", 10, self.option_menu_for_assets),
+                          (self.optionMenuForAssets, "top", 10, step1Text),
+                          (refreshButton, "top", 10, self.optionMenuForAssets),
                           (refreshButton, "right", 20, create_asset_button),
-                          (create_asset_button, "top", 10, self.option_menu_for_assets),
+                          (create_asset_button, "top", 10, self.optionMenuForAssets),
 
                           # --- Step 2 : Meshes Element
                           (step2Text, "top", 20, create_asset_button),
@@ -321,7 +324,7 @@ class riggingUI():
                       ])
 
         # Show the UI window
-        pm.showWindow(self.window_UI_node)
+        cmds.showWindow(self.windowUINode)
 
     # def __repr__(self):
-    #     return pm.lsUI(type="window")
+    #     return cmds.lsUI(type="window")
