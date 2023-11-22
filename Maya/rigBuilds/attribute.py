@@ -2,26 +2,30 @@ import maya.OpenMaya as om
 import maya.cmds as cmds
 import pymel.core as pm
 
-def createTags(nodeName='C_joint0_JNT', tagName='myTag', tagValue='myTagValue'):
+def createTags(nodeName='C_joint0_JNT', attrName= 'myTag', attrValue='myTagValue'):
     """
     FUNCTION:      createTags
     DESCRIPTION:   crates tags for easy selection
     USAGE:         tagged_objs = pm.ls('*.*myTag' == 'myTagValue')
-    RETURN:        String
+    RETURN:        String or None if object dont exist
     REQUIRES:      None
     Version        1.0.0
-    Examples:      SKIN     :   skinweights
+    Examples:      SKIN     :   skinweights'
                    JOINTS   :   joints
     """
     # check if the object exists
     if cmds.objExists(nodeName):
-        # add the custom attribute
-        cmds.addAttr(nodeName, longName=tagName, dataType='string')
-        # set the value of the attribute
-        cmds.setAttr(f"{nodeName}.{tagName}", tagValue, type='string')
-        return f"{nodeName}.{tagName}"
+        # check if the attribute exists
+        if not cmds.attributeQuery(attrName, node=nodeName, exists=True):
+            # if it does not exist, create custom attrs
+            cmds.addAttr(nodeName, longName=attrName, dataType='string')
+            cmds.setAttr(f"{nodeName}.{attrName}", attrValue, type='string')
+            print(f'added in new attribute on to {nodeName}.{attrName} with the attribute {attrValue}')
+        return f"{nodeName}.{attrName}"
+
     else:
         cmds.warning(f'Object {nodeName} does not exist.')
+        return None
 
 def selectTags(tagName='SKIN'):
     """
@@ -34,8 +38,8 @@ def selectTags(tagName='SKIN'):
     """
 
     # List all objects with the specified tag attribute
-    all_transforms = cmds.ls(type='transform')
-    taggedObjs = [obj for obj in all_transforms if cmds.attributeQuery(tagName, node=obj, exists=True)]
+    allTransforms = cmds.ls(type='transform')
+    taggedObjs = [obj for obj in allTransforms if cmds.attributeQuery(tagName, node=obj, exists=True)]
 
     if not taggedObjs:
         cmds.warning('No objects found with the tag attribute: {}'.format(tagName))
