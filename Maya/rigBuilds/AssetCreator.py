@@ -7,26 +7,27 @@ from rigBuilds import UI
 
 class AssetCreator():
     def __init__(self,
-                 paths = r"D:/OneDrive/TonyTools/Maya/projects"):
+                 paths=r"D:/OneDrive/TonyTools/Maya/projects"):
+
         self.paths = paths
-        self.create_asset_window = None
-        self.asset_path_text_field = None
-        self.create_ui_window()
+        self.createAssetWindow = None
+        self.assetPathTextField = None
+        self.createUiWindow()
 
     def create_asset_folder(self, *args):
-        asset_path = cmds.textField(self.asset_path_text_field, query=True, text=True)
+        assetPath = cmds.textField(self.assetPathTextField, query=True, text=True)
 
         "find the modeling file of the asset, make sure to Check that path ends with .ma or .mb"
-        if not asset_path.endswith(".ma") and not asset_path.endswith(".mb"):
+        if not assetPath.endswith(".ma") and not assetPath.endswith(".mb"):
             cmds.warning("Please make sure the Asset Path ends with .ma or .mb")
             return
 
         # Check if the file exists
-        if not os.path.exists(asset_path):
+        if not os.path.exists(assetPath):
             cmds.warning("The file does not exist at the provided path.")
             return
 
-        asset_name = os.path.splitext(os.path.basename(asset_path))[0]
+        asset_name = os.path.splitext(os.path.basename(assetPath))[0]
         asset_folder_path = os.path.join(self.paths, asset_name)
 
         # Check if the asset folder already exists
@@ -57,26 +58,26 @@ class AssetCreator():
         os.makedirs(skin_weights_folder_path)
 
         # Copy asset file to the model folder
-        model_asset_path = os.path.join(model_folder_path, os.path.basename(asset_path))
-        shutil.copy(asset_path, model_asset_path)
+        modelAssetPath = os.path.join(model_folder_path, os.path.basename(assetPath))
+        shutil.copy(assetPath, modelAssetPath)
         print("Sucssecful, Copied asset file to the model folder.")
 
         # make this work!
         # UI.riggingUI.refreshAssetList()
         return
 
-    def create_ui_window(self):
+    def createUiWindow(self):
         if cmds.window("CreateNewAssetWindow", exists=True):
             cmds.deleteUI("CreateNewAssetWindow", window=True)
 
-        self.create_asset_window = cmds.window("CreateNewAssetWindow", title="Create New Asset", widthHeight=(300, 120))
+        self.createAssetWindow = cmds.window("CreateNewAssetWindow", title="Create New Asset", widthHeight=(300, 120))
         create_asset_layout = cmds.columnLayout(adjustableColumn=True)
 
         cmds.text(label=" find the modeling file of the asset")
         cmds.text(label="copy and paste the path and include the file with extenstion (with .ma or .mb extension):")
         cmds.text(label= r'for example : C:\Users\kimoo\OneDrive\Desktop\cube.ma')
-        self.asset_path_text_field = cmds.textField()
+        self.assetPathTextField = cmds.textField()
         cmds.button(label="Create the Asset Structure", command=self.create_asset_folder)
         cmds.text(label=r'This will add a name in the rigging UI Asset list, base on the file name')
         cmds.setParent('..')
-        cmds.showWindow(self.create_asset_window)
+        cmds.showWindow(self.createAssetWindow)
