@@ -17,6 +17,9 @@ importlib.reload(LocGuidesIO)
 importlib.reload(SkinWeightIO)
 importlib.reload(attribute)
 
+from rigBuilds.rig import Joints
+importlib.reload(Joints)
+
 class riggingUI():
     def __init__(self):
         self.windowName = "Tony Rigging Sys"
@@ -69,10 +72,9 @@ class riggingUI():
         "to create the asset structure to create new assets"
         AssetCreator.AssetCreator(paths=self.paths)
         print("Opening window : Create New Asset Structure")
-
     # END of Step 1 : asset listing and structure creation button
 
-    # --- Step 2 : Build Meshes Fuction
+    # --- Build Meshes Fuction
     # Create a function to handle the button click event
     def build_mesh_callback(self, *args):
         cmds.file(force=True, new=True)
@@ -88,9 +90,9 @@ class riggingUI():
             attribute.createTags(nodeName=mesh, attrName='skin', attrValue='skinweights')
             cmds.parent(mesh, 'GEO')
             print("Build mesh from:", mesh)
-    # # END OF Step 2 : Build Meshes Fuction
+    # END OF Build Meshes Fuction
 
-    # --- Step 3 : create LocGuides
+    # --- Step 2 : create LocGuides
     # Create a function to handle the "Build Guides" button click event
     def call_create_guides(self, *args):
         self.build_mesh_callback()
@@ -112,9 +114,9 @@ class riggingUI():
     def save_guides_callback(self, *args):
         dataList = LocGuidesIO.writeLocGuidesData(tagName='locator', filePath=self.fullLocGuidePaths)
         print("Saving guides to folder:", dataList)
-    # END OF Step 3 : Build LocGuides
+    # END OF Step 2 : Build LocGuides
 
-    # --- Step 4
+    # --- Step 3
     # --- Build Rigs
     "build the the rigs from its paths "
     # Create a function to handle the "Build Rigs" button click event
@@ -156,14 +158,19 @@ class riggingUI():
         taggedList = SkinWeightIO.tagAsSkin()
         print(f"Tagging skins :, {taggedList}")
 
+    # --- select tagged joints
+    def selectTaggedJointsCallback(self, *args):
+        "selected Object is tagged as joints"
+        taggedList = Joints.selectTaggedJoints()
+
     # --- copy Skinweight to
     def copy_to_skin_callback(self, *args):
         "selected First Object, to copy to second selected object + more"
         SkinWeightIO.copySkinToo()
 
-    # END OF Step 4
+    # END OF Step 3
 
-    # --- Step 5 : Clean up Rigs
+    # --- Step 4 : Clean up Rigs
     def clean_up_rig_from_callback(self, *args):
         try:
             self.module = importlib.import_module(self.selectedItem)
@@ -177,7 +184,7 @@ class riggingUI():
         except Exception as e:
             traceback.print_exc()
             print("Error:", e)
-    # --- END OF Step 5 : Clean up Rigs
+    # --- END OF Step 4 : Clean up Rigs
 
     def create_ui_window(self):
         """
@@ -213,7 +220,7 @@ class riggingUI():
         # # END OF Step 2
 
         # --- Step 3 : Load LocGuides Elements
-        step3Text = cmds.text(label="Step 2 : load in LocGuides")
+        step2Text = cmds.text(label="Step 2 : load in LocGuides")
         # Create a button to build guides
         build_guides_button = cmds.button(label="Build LocGuides", command=self.call_create_guides)
         # Create a button to load guides
@@ -223,20 +230,24 @@ class riggingUI():
         # END OF Step 3 : Load LocGuides
 
         # --- Step 4 : create rigs Elements
-        step4Text = cmds.text(label="Step 3 : Create Rig")
+        step3Text = cmds.text(label="Step 3 : Create Rig")
         build_rigs_button = cmds.button(label="Build Rigs", command=self.build_rigs_callback)
         # Create a button to load skins
         load_skin_button = cmds.button(label="Load skins", command=self.load_skins_callback)
-        # Create a button to save skins
+        # # Create a button to save skins
         save_skin_button = cmds.button(label="Save skins", command=self.save_skins_callback)
+
+        skinningToolsText = cmds.text(label="skinning tools")
         # Create a button to load skins
-        tag_skin_button = cmds.button(label="tag skins", command=self.tag_skins_callback)
+        tag_skin_button = cmds.button(label="tag as skins", command=self.tag_skins_callback)
+        # Create a button to load skins
+        selectTaggedJointsButton = cmds.button(label="Select Tagged Joints", command=self.selectTaggedJointsCallback)
         # Create a button to save skins
-        copy_skin_button = cmds.button(label="copy skins to", command=self.copy_to_skin_callback)
+        copy_skin_button = cmds.button(label="copy skins to (select toggle)", command=self.copy_to_skin_callback)
         # END OF Step 4 : create rigs
 
         # --- clean up rigs
-        step5Text = cmds.text(label="Step 4 : FINAL")
+        step4Text = cmds.text(label="Step 4 : FINAL")
         cleanup_button = cmds.button(label="clean up Rig", command=self.clean_up_rig_from_callback)
 
         # Position the UI elements within the form layout
@@ -253,16 +264,9 @@ class riggingUI():
                           (refreshButton, "left", 10),
                           (create_asset_button, "right", 10),
 
-                          # # --- Step 2 : Meshes Element position
-                          # (step2Text, "left", 10),
-                          # (step2Text, "right", 10),
-                          #
-                          # (buildMeshButton, "left", 10),
-                          # (buildMeshButton, "right", 10),
-
-                          # --- Step 3 : LocGuides Element position
-                          (step3Text, "left", 10),
-                          (step3Text, "right", 10),
+                          # --- Step 2 : LocGuides Element position
+                          (step2Text, "left", 10),
+                          (step2Text, "right", 10),
 
                           (build_guides_button, "left", 10),
                           (build_guides_button, "right", 10),
@@ -270,9 +274,9 @@ class riggingUI():
                           (load_guides_button, "left", 10),
                           (save_guides_button, "right", 10),
 
-                          # --- Step 4 : Build Rigs Element position
-                          (step4Text, "left", 10),
-                          (step4Text, "right", 10),
+                          # --- Step 3 : Create Rigs Element position
+                          (step3Text, "left", 10),
+                          (step3Text, "right", 10),
 
                           (build_rigs_button, "left", 10),
                           (build_rigs_button, "right", 10),
@@ -280,12 +284,17 @@ class riggingUI():
                           (load_skin_button, "left", 10),
                           (save_skin_button, "right", 10),
 
+                          (skinningToolsText, "left", 10),
+                          (skinningToolsText, "right", 10),
+
                           (tag_skin_button, "left", 10),
+                          (selectTaggedJointsButton, "left", 10),
+
                           (copy_skin_button, "right", 10),
 
-                          # --- Step 5 : FINALIZE Rigs Element position
-                          (step5Text, "left", 10),
-                          (step5Text, "right", 10),
+                          # --- Step 4 : FINALIZE Rigs Element position
+                          (step4Text, "left", 10),
+                          (step4Text, "right", 10),
                           (cleanup_button, "left", 10),
                           (cleanup_button, "right", 10),
                       ],
@@ -300,27 +309,30 @@ class riggingUI():
                           # (step2Text, "top", 20, create_asset_button),
                           # (buildMeshButton, "top", 10, step2Text),
 
-                          # --- Step 3 :  LocGuides Element
-                          (step3Text, "top", 20, create_asset_button),
-                          (build_guides_button, "top", 10, step3Text),
+                          # --- Step 2 :  LocGuides Element
+                          (step2Text, "top", 20, create_asset_button),
+                          (build_guides_button, "top", 10, step2Text),
                           (load_guides_button, "top", 10, build_guides_button),
                           (save_guides_button, "top", 10, build_guides_button),
                           (save_guides_button, "left", 10, load_guides_button),
 
-                          # --- Step 4 :  Build Rig Element
-                          (step4Text, "top", 20, load_guides_button),
-                          (build_rigs_button, "top", 10, step4Text),
+                          # --- Step 3 :  create Rig Element
+                          (step3Text, "top", 20, load_guides_button),
+                          (build_rigs_button, "top", 10, step3Text),
                           (load_skin_button, "top", 10, build_rigs_button),
-                          (save_skin_button, "top", 10, build_rigs_button),
 
+                          (save_skin_button, "top", 10, build_rigs_button),
                           (save_skin_button, "left", 10, load_skin_button),
 
-                          (tag_skin_button, "top", 10, load_skin_button),
-                          (copy_skin_button, "top", 10, save_skin_button),
+                          (skinningToolsText, "top", 10, load_skin_button),
 
-                          # --- Step 5 :  Finalizing
-                          (step5Text, "top", 20, tag_skin_button),
-                          (cleanup_button, "top", 10, step5Text),
+                          (tag_skin_button, "top", 10, skinningToolsText),
+                          (selectTaggedJointsButton, "top", 10, tag_skin_button),
+                          (copy_skin_button, "top", 10, skinningToolsText),
+
+                          # --- Step 4 :  Finalizing
+                          (step4Text, "top", 20, selectTaggedJointsButton),
+                          (cleanup_button, "top", 10, step4Text),
 
                       ])
 
