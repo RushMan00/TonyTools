@@ -165,18 +165,21 @@ def loadLocGuidesData(filePath='\TonyTools\Maya\projects\pridapus\data'):
         for nodeName, attrs in data.items():
             print(nodeName)
             for axis, val in attrs.items():
-                attrName = '{}.{}'.format(nodeName, axis)
-                if cmds.getAttr(attrName, lock=True):
-                    print(f"The attribute {attrName} is locked.")
-                    continue
-                else:
-                    try:
-                        cmds.setAttr(attrName, val)
-                    except RuntimeError:
-                        print(
-                            f"Could not set value for attribute {attrName}.\n"
-                            "It may be connected to another attribute.")
+                if cmds.objExists(nodeName):
+                    attrName = '{}.{}'.format(nodeName, axis)
+                    if cmds.getAttr(attrName, lock=True):
+                        print(f"The attribute {attrName} is locked.")
                         continue
+                    else:
+                        try:
+                            cmds.setAttr(attrName, val)
+                        except RuntimeError:
+                            print(
+                                f"Could not set value for attribute {attrName}.\n"
+                                "It may be connected to another attribute.")
+                            continue
+                else:
+                    continue
 
     print('---- Finished loading in LocGuides Data ----')
     return dataList
