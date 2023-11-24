@@ -36,6 +36,9 @@ def checkIfFilePathsExist(filePath=r'D:/OneDrive/TonyTools'):
     """
     filePath = convertSlashesToDoubleBackslashes(filePath)
     print(filePath)
+    if not os.access(filePath, os.W_OK):
+        print('Directory is not writable:', filePath)
+        return False, filePath
     if not os.path.exists(filePath):
         print(f"The directory {filePath} does not exist or path is not correct. "
               f"Please check Drive location and path location carefully.")

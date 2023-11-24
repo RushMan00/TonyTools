@@ -93,6 +93,7 @@ class riggingUI():
     # --- Step 3 : create LocGuides
     # Create a function to handle the "Build Guides" button click event
     def call_create_guides(self, *args):
+        self.build_mesh_callback()
         sys.path.append(self.paths + '\\' + self.selectedItem)
         self.module = importlib.import_module(self.selectedItem)
         importlib.reload(self.module)
@@ -205,14 +206,14 @@ class riggingUI():
         create_asset_button = cmds.button(label="Create Asset", command=self.create_asset)
         # END OF Step 1
 
-        # --- Step 2 : Load meshes
-        step2Text = cmds.text(label="Step 2 : load in Mesh/Geo")
-        # Create a button to build the mesh
-        buildMeshButton = cmds.button(label="Build Mesh", command=self.build_mesh_callback)
-        # END OF Step 2
+        # # --- Step 2 : Load meshes
+        # step2Text = cmds.text(label="Step 2 : load in Mesh/Geo")
+        # # Create a button to build the mesh
+        # buildMeshButton = cmds.button(label="Build Mesh", command=self.build_mesh_callback)
+        # # END OF Step 2
 
         # --- Step 3 : Load LocGuides Elements
-        step3Text = cmds.text(label="Step 3 : load in LocGuides")
+        step3Text = cmds.text(label="Step 2 : load in LocGuides")
         # Create a button to build guides
         build_guides_button = cmds.button(label="Build LocGuides", command=self.call_create_guides)
         # Create a button to load guides
@@ -222,7 +223,7 @@ class riggingUI():
         # END OF Step 3 : Load LocGuides
 
         # --- Step 4 : create rigs Elements
-        step4Text = cmds.text(label="Step 4 : Create Rig")
+        step4Text = cmds.text(label="Step 3 : Create Rig")
         build_rigs_button = cmds.button(label="Build Rigs", command=self.build_rigs_callback)
         # Create a button to load skins
         load_skin_button = cmds.button(label="Load skins", command=self.load_skins_callback)
@@ -235,7 +236,7 @@ class riggingUI():
         # END OF Step 4 : create rigs
 
         # --- clean up rigs
-        step5Text = cmds.text(label="Step 5 : FINAL")
+        step5Text = cmds.text(label="Step 4 : FINAL")
         cleanup_button = cmds.button(label="clean up Rig", command=self.clean_up_rig_from_callback)
 
         # Position the UI elements within the form layout
@@ -252,12 +253,12 @@ class riggingUI():
                           (refreshButton, "left", 10),
                           (create_asset_button, "right", 10),
 
-                          # --- Step 2 : Meshes Element position
-                          (step2Text, "left", 10),
-                          (step2Text, "right", 10),
-
-                          (buildMeshButton, "left", 10),
-                          (buildMeshButton, "right", 10),
+                          # # --- Step 2 : Meshes Element position
+                          # (step2Text, "left", 10),
+                          # (step2Text, "right", 10),
+                          #
+                          # (buildMeshButton, "left", 10),
+                          # (buildMeshButton, "right", 10),
 
                           # --- Step 3 : LocGuides Element position
                           (step3Text, "left", 10),
@@ -295,12 +296,12 @@ class riggingUI():
                           (refreshButton, "right", 20, create_asset_button),
                           (create_asset_button, "top", 10, self.optionMenuForAssets),
 
-                          # --- Step 2 : Meshes Element
-                          (step2Text, "top", 20, create_asset_button),
-                          (buildMeshButton, "top", 10, step2Text),
+                          # # --- Step 2 : Meshes Element
+                          # (step2Text, "top", 20, create_asset_button),
+                          # (buildMeshButton, "top", 10, step2Text),
 
                           # --- Step 3 :  LocGuides Element
-                          (step3Text, "top", 20, buildMeshButton),
+                          (step3Text, "top", 20, create_asset_button),
                           (build_guides_button, "top", 10, step3Text),
                           (load_guides_button, "top", 10, build_guides_button),
                           (save_guides_button, "top", 10, build_guides_button),
