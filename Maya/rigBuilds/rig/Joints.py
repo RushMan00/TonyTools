@@ -1,8 +1,48 @@
 import pymel.core as pm
 import maya.cmds as cmds
 import importlib as imp
+
 from rigBuilds import attribute
 imp.reload(attribute)
+
+tagName = 'jointData'
+tagValue = 'JNT'
+
+def tagAsJoints(object=[None]):
+    """
+    Tag objects as Skin. Objects can be provided as a list or selected in the Maya scene.
+    Skips objects if the specified attribute already exists.
+
+    Args:
+        inputList (list, optional): List of objects to be tagged. Defaults to None.
+
+    Returns:
+        list: A list containing the names of successfully tagged objects.
+    """
+    if object is None:
+        object = []
+
+    # Optionally add currently selected objects in the Maya scene to the input list
+    object.extend(cmds.ls(sl=1))
+
+    taggedObjects = []
+    for obj in object:
+        try:
+            # Check if the attribute already exists
+            if not cmds.attributeQuery(tagValue, node=obj, exists=True):
+                attribute.createTags(nodeName=obj, attrName=tagName, attrValue=tagValue)
+                taggedObjects.append(obj)
+            else:
+                print(f"Attribute {tagName} already exists on {obj}, skipping.")
+        except Exception as e:
+            print(f"Error tagging object {obj}: {e}")
+
+    return taggedObjects
+
+def selectTaggedJoints():
+    ListofObject = attribute.selectTags(tagName=tagName)
+    return ListofObject
+
 
 def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
                      parent='SKELE',
@@ -69,7 +109,8 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
             cmds.parent(jnts, ChainedJntList)
         # tag
         if tag:
-            attribute.createTags(nodeName=jnts, attrName='joint', attrValue='JNT')
+            tagAsJoints(object=[jnts])
+            # attribute.createTags(nodeName=jnts, attrName=tagName, attrValue=tagValue)
 
     # Orient the joint chain
     cmds.select(jointList)
