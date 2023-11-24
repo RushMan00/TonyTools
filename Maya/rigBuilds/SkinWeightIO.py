@@ -11,64 +11,78 @@ imp.reload(Checker)
 imp.reload(attribute)
 
 tagName = 'skinweight'
-tagValue = 'SKIN'
+tagValue = 'skinweightData'
 # tonyfilePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'
 
 def tagAsSkin(object=[None]):
     """
-    Tag selected objects and objects from the input list as Skin str names.
+    Tag objects as Skin. Objects can be provided as a list or selected in the Maya scene.
+    Skips objects if the specified attribute already exists.
 
     Args:
-        input_list (list): List of objects to be tagged.
+        inputList (list, optional): List of objects to be tagged. Defaults to None.
 
     Returns:
-        list: A list containing the names of tagged objects.
+        list: A list containing the names of successfully tagged objects.
     """
+    if object is None:
+        object = []
 
-    allObjects = []
-    # Get currently selected objects in the Maya scene
-    objects = cmds.ls(sl=1)
-    # Add the names of selected objects to the allObjects list
-    allObjects.extend(objects)
-    # Print the names of all tagged objects
-    for obj in cmds.ls(sl=1):
-        # Tag all objects as SKIN
-        attribute.createTags(nodeName=obj, attrName=tagName, attrValue=tagValue)
-    # return list of tagged SkinWeights
-    return objects
+    # Optionally add currently selected objects in the Maya scene to the input list
+    object.extend(cmds.ls(sl=1))
+
+    taggedObjects = []
+    for obj in object:
+        try:
+            # Check if the attribute already exists
+            if not cmds.attributeQuery(tagValue, node=obj, exists=True):
+                attribute.createTags(nodeName=obj, attrName=tagValue, attrValue=tagName)
+                taggedObjects.append(obj)
+            else:
+                print(f"Attribute {tagName} already exists on {obj}, skipping.")
+        except Exception as e:
+            print(f"Error tagging object {obj}: {e}")
+
+    return taggedObjects
 
 def selectTaggedSkins():
     """
     to only select objects that has tagged as "skin"
     :return: selected objects tag as "skin"
     """
-    ListofObject = attribute.selectTags(tagName=tagName)
+    ListofObject = attribute.selectTags(tagName=tagValue)
     return ListofObject
 
 def exportTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
-    # check if paths exist
-    bools, paths = Checker.checkIfFilePathsExist(filePath)
+    # # check if paths exist
+    # bools, paths = Checker.checkIfFilePathsExist(filePath)
 
-    # Assuming selectTaggedSkins is a function that returns a list of mesh names
+    # Normalize and convert to an absolute path with forward slashes
+    filePath = os.path.abspath(os.path.normpath(filePath)).replace('\\', '/')
+
+    # Check if directory exists and is writable
+    if not os.path.exists(filePath):
+        print('Directory does not exist:', filePath)
+        return
+    if not os.access(filePath, os.W_OK):
+        print('Directory is not writable:', filePath)
+        return
+
     for objectName in selectTaggedSkins():
-        # Check if the object exists in the scene
         if not cmds.objExists(objectName):
             print(f"{objectName} does not exist in the scene.")
             continue
 
-        # List the history of the geometry and find the skinCluster
         history = cmds.listHistory(objectName)
         skinClusters = [node for node in history if cmds.nodeType(node) == 'skinCluster']
         if not skinClusters:
             print(f"No skinCluster found on {objectName}")
             continue
-        print(f'There is {skinClusters[0]} on {objectName}')
 
-        # Use os.path.join to ensure proper path construction
-        exportPath = os.path.join(filePath, objectName + '.xml')
+        cmds.deformerWeights(objectName + '.xml', path=filePath,
+                             ex=True, deformer=skinClusters[0], shape=objectName,  method='index')
 
-        # Export skin weights
-        cmds.deformerWeights(exportPath, deformer=skinClusters[0], export=True, method="index", shape=objectName)
+        print('Export completed.')
 
 def importTaggedSkinWeightMap(filePath=r'D:\OneDrive\TonyTools\Maya\projects\pridapus\data\skinweights'):
     print('---- STARTING importing tagged Skin Weight Maps ----')
