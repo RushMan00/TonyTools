@@ -556,19 +556,25 @@ class controlCurves():
             cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], ctlName + '.cv[0:%s]' % len(allSpans))
         # --- self.hook
         if self.hook:
-            print('+_+_+_+_+_+_+_')
-            print(self.finishedGrpLst[0])
+            # print('+_+_+_+_+_+_+_')
+            # print(self.finishedGrpLst[0])
             cmds.parent(self.finishedGrpLst[0], self.hook)
         # --- self.tag
         if self.tag:
             attribute.createTags(nodeName=self.controlNames[0], attrName='type', attrValue='CNT')
 
-    # --- just get the Get pyNodes and Strings
+    # --- returns
     def __str__(self):
         return self.finishedGrpLst[-1]
 
     def __repr__(self):
         return self.finishedGrpLst[-1]
+
+    def getControlName(self):
+        return self.finishedGrpLst[-1]
+
+    def geControlBase(self):
+        return self.finishedGrpLst[0]
 
     def getInstancesList(self):
         return self.finishedGrpLst
@@ -583,3 +589,16 @@ class controlCurves():
         # self.__controlAdj()
         # if self.subControl:
         #     self.__createSubControls()
+
+
+def scaleCurve(controlNames='C_global0_CNT', scale=1):
+    """
+    to scale curve with out effecting int of scale
+    ex. scale xyz will always be 1
+    """
+    MainControlCrv = pm.PyNode(controlNames)
+    for i in MainControlCrv.getShapes():
+        a = str(i.getName())
+        spans = pm.getAttr(i + '.spans')
+        allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
+        cmds.scale(scale, scale, scale, allSpans, r=True)
