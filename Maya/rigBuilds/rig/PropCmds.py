@@ -5,9 +5,6 @@ import importlib as imp
 from rigBuilds.rig import Joints
 imp.reload(Joints)
 
-from rigBuilds import ControlCurves
-imp.reload(ControlCurves)
-
 class propCmds():
     def __init__(self,
                  side='C',

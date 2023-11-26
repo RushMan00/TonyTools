@@ -1,8 +1,8 @@
 import maya.cmds as cmds
 import importlib as imp
 import pymel.core as pm
-from rigBuilds import ControlCurves
 
+from rigBuilds.rig import ControlCurves
 imp.reload(ControlCurves)
 
 # class baseRig():
@@ -142,9 +142,30 @@ class baseRig2():
 
         main = cmds.group(em=True, n='C_local_GRP', p=godControl)
 
+
+        cmds.addAttr(globalControl.getControlName(),
+                     shortName='gs', longName='globalScale',
+                     defaultValue=1.0, minValue=0, k=1)
+
+        for axis in 'xyz':
+            cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
+                             f'{globalControl.getControlName()}.s{axis}')
+
         if self.addRootJoint:
             jnt = cmds.joint(n=f'{self.name}Root_JNT')
             cmds.parent(jnt, self.groups)
 
-        cmds.addAttr(shortName='gs', longName='globalScale', defaultValue=1.0, minValue=0)
-        cmds.connectAttrs()
+            # connect to global scale
+            for axis in 'xyz':
+                cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
+                                 f'{jnt}.s{axis}')
+            # for rottran in 'tr':
+            #     for axis in 'xyz':
+            #         cmds.connectAttr(f'{globalControl.getControlName()}.{rottran}{axis}',
+            #                          f'{jnt}.{rottran}{axis}')
+            cmds.parentConstraint(godControl.getControlName(),
+                                  jnt
+                                  )
+
+
+        # clean up
