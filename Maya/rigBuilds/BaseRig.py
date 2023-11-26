@@ -86,12 +86,15 @@ class baseRig2():
     def __init__(self,
                  name='Base',
                  size=1,
+                 addRootJoint = True,
+
                  ):
         """
         QUICK WAY TO GET RIG BASE
         """
         self.name = name
         self.size = size
+        self.addRootJoint = addRootJoint
         self.groups = ['RIG', 'GEO', 'SKELE']
 
         # TODO
@@ -138,3 +141,10 @@ class baseRig2():
                                               )
 
         main = cmds.group(em=True, n='C_local_GRP', p=godControl)
+
+        if self.addRootJoint:
+            jnt = cmds.joint(n=f'{self.name}Root_JNT')
+            cmds.parent(jnt, self.groups)
+
+        cmds.addAttr(shortName='gs', longName='globalScale', defaultValue=1.0, minValue=0)
+        cmds.connectAttrs()
