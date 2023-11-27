@@ -123,22 +123,24 @@ class baseRig2():
                                                     scale=self.size,
                                                     hook = main,
                                                     # parent = ,
+                                                    lockHideAttrs=['v'],
                                                     parentOrConst='parent',
                                                     adjGrpNumber=1,
                                                     tag=True
                                                     )
 
         godControl = ControlCurves.controlCurves(name='god',
-                                              side='C',
-                                              shape='god',
-                                              num=0,
-                                              rotate=[0, 0, 0],
-                                              scale= self.size / 2.2,
-                                              hook = globalControl,
-                                              parentOrConst='parent',
-                                              adjGrpNumber=1,
-                                              tag=True
-                                              )
+                                                  side='C',
+                                                  shape='god',
+                                                  num=0,
+                                                  rotate=[0, 0, 0],
+                                                  scale= self.size / 2.2,
+                                                  hook = globalControl,
+                                                 lockHideAttrs=['v'],
+                                                  parentOrConst='parent',
+                                                  adjGrpNumber=1,
+                                                  tag=True
+                                                  )
 
         main = cmds.group(em=True, n='C_local_GRP', p=godControl)
 
