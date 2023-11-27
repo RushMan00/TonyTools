@@ -5,8 +5,7 @@ import os
 import importlib as imp
 import xml.etree.ElementTree as ET
 
-from rigBuilds import BaseRig, Checker, attribute
-imp.reload(BaseRig)
+from rigBuilds import Checker, attribute
 imp.reload(Checker)
 imp.reload(attribute)
 
