@@ -4,8 +4,7 @@ import json
 import os
 import importlib as imp
 
-from rigBuilds import BaseRig, Checker, attribute
-imp.reload(BaseRig)
+from rigBuilds import Checker, attribute
 imp.reload(Checker)
 imp.reload(attribute)
 
