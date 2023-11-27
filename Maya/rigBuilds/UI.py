@@ -7,18 +7,17 @@ import traceback
 import maya.cmds as cmds
 import pymel.core as pm
 
-from rigBuilds import AssetCreator, LoadMaFile, BaseRig, LocGuides, LocGuidesIO, SkinWeightIO, attribute
+from rigBuilds import AssetCreator, LoadMaFile, LocGuidesIO, SkinWeightIO, attribute
 
 importlib.reload(AssetCreator)
 importlib.reload(LoadMaFile)
-importlib.reload(BaseRig)
-importlib.reload(LocGuides)
 importlib.reload(LocGuidesIO)
 importlib.reload(SkinWeightIO)
 importlib.reload(attribute)
 
-from rigBuilds.rig import Joints
+from rigBuilds.rig import Joints, BaseRig
 importlib.reload(Joints)
+importlib.reload(BaseRig)
 
 class riggingUI():
     def __init__(self):
@@ -122,6 +121,7 @@ class riggingUI():
     # Create a function to handle the "Build Rigs" button click event
     def build_rigs_callback(self, *args):
         try:
+            self.call_create_guides()
             self.module = importlib.import_module(self.selectedItem)
             print("Imported module:", self.module)
             importlib.reload(self.module)
@@ -173,6 +173,7 @@ class riggingUI():
     # --- Step 4 : Clean up Rigs
     def clean_up_rig_from_callback(self, *args):
         try:
+            self.build_rigs_callback()
             self.module = importlib.import_module(self.selectedItem)
             print("Imported module:", self.module)
             importlib.reload(self.module)
