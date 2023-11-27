@@ -20,6 +20,7 @@ class controlCurves():
                  parent=None,
                  parentOrConst='parent',
                  adjGrpNumber=2,
+                 lockHideAttrs = ['sx','sy','sz','v'],
                  hook = None,
                  tag = True,
                  # TODO sub controls
@@ -54,6 +55,7 @@ class controlCurves():
         self.parentOrConst = parentOrConst
         self.rotate = rotate
         self.adjGrpNumber = adjGrpNumber
+        self.lockHideAttrs = lockHideAttrs
         self.hook = hook
         self.tag = tag
 
@@ -169,7 +171,6 @@ class controlCurves():
 
     # ================================ THE CONTROL LIBRARY ================================
     # --- ACME CONTROL
-    # TODO FIXTHIS
     def acmeControl(self):
         self.innerCountShape = 0
         """ACME usually for things to put any attrs or pramas for over all rig """
@@ -194,8 +195,6 @@ class controlCurves():
         self.controlNode = pm.parent(starcurve.getShape(), circleCurve.getShape(), self.controlNames, s=True, r=True)
         pm.delete(starcurve, circleCurve)
         self.controlNames = self.controlNames.name()
-        print('A_A_A_A_A_A_A_A')
-        print(self.controlNames)
     # End of ACME CONTROL
 
     # --- Circle CONTROL
@@ -540,6 +539,9 @@ class controlCurves():
             cmds.setAttr(ctlName + '.overrideEnabled', 1)
             cmds.setAttr(ctlName + '.overrideColor', self.color)
 
+
+
+
         # TODO : make sub controls
         # --- creating sub adj/buffer groups
         # END OF sub adj/buffer groups
@@ -562,6 +564,12 @@ class controlCurves():
         # --- self.tag
         if self.tag:
             attribute.createTags(nodeName=self.controlNames[0], attrName='type', attrValue='CNT')
+
+        # # --- clean up
+        # if not self.lockHideAttrs:
+        for lockHideAttr in self.lockHideAttrs:
+            cmds.setAttr(f'{self.controlNames}.{lockHideAttr}', l=1, k=0, cb=0)
+
 
     # --- returns
     def __str__(self):
