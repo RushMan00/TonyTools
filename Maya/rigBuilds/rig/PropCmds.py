@@ -2,8 +2,9 @@ import maya.cmds as cmds
 import pymel.core as pm
 import importlib as imp
 
-from rigBuilds.rig import Joints
+from rigBuilds.rig import Joints, ControlCurves
 imp.reload(Joints)
+imp.reload(ControlCurves)
 
 class propCmds():
     def __init__(self,
@@ -16,7 +17,7 @@ class propCmds():
                  controlRotation=[90, 0, 0],
                  parentControlsTo='C_god0_CNT',
                  parentJointsTo='SKELE',
-
+                 lockHideAttrs=['sx', 'sy', 'sz'],
                  jointChain=True,
                  controlChain = True,
 
@@ -35,6 +36,7 @@ class propCmds():
         self.controlRotation = controlRotation
         self.parentControlsTo = parentControlsTo
         self.parentJointsTo = parentJointsTo
+        self.lockHideAttrs = lockHideAttrs
         self.jointChain = jointChain
         self.controlChain = controlChain
 
@@ -77,10 +79,10 @@ class propCmds():
                                                                parentOrConst='const',
                                                                adjGrpNumber=1,
                                                                hook=hook[-1],
+                                                               lockHideAttrs=self.lockHideAttrs,
                                                                tag=True,
                                                                )
                 hook.append(self.controlList.getControlName())
-                # self.controlList.getControlBase()
 
         else:
             # create Curve controls
@@ -96,6 +98,7 @@ class propCmds():
                                                               parentOrConst='const',
                                                               adjGrpNumber=1,
                                                               hook=self.parentControlsTo,
+                                                              lockHideAttrs=self.lockHideAttrs,
                                                               tag=True,
                                                               )
 
