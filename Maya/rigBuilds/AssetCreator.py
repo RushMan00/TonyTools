@@ -2,8 +2,6 @@ import os
 import shutil
 import maya.cmds as cmds
 
-from rigBuilds import UI
-
 
 class AssetCreator():
     def __init__(self,
@@ -49,7 +47,7 @@ class AssetCreator():
         python_file_name = f"{asset_name}.py"
         python_file_path = os.path.join(asset_folder_path, python_file_name)
         with open(python_file_path, "w") as python_file:
-            python_file.write("# Python file for asset")
+            python_file.write(projectTemp)
 
         # Create the locGuides and skinweights folders under data folder
         loc_guides_folder_path = os.path.join(data_folder_path, "locGuides")
@@ -81,3 +79,47 @@ class AssetCreator():
         cmds.text(label=r'This will add a name in the rigging UI Asset list, base on the file name')
         cmds.setParent('..')
         cmds.showWindow(self.createAssetWindow)
+
+projectTemp = """import pymel.core as pm
+import maya.cmds as cmds
+import importlib as imp
+
+# rigbuilds modules
+from rigBuilds import LocGuides, attribute
+imp.reload(LocGuides)
+imp.reload(attribute)
+
+# rig modules
+from rigBuilds.rig import PropCmds, ControlCurves
+imp.reload(PropCmds)
+imp.reload(ControlCurves)
+
+# --- create locGuides
+def createGuides():
+    # # --- modify the main control size
+    ControlCurves.scaleCurve(controlNames='C_global0_CNT', scale=1.5)
+    ControlCurves.scaleCurve(controlNames='C_god0_CNT', scale=1.5)
+
+    cog = LocGuides.locGuides(name='cog',
+                              side='C',
+                              size=1,
+                              nameList=['cog%s' % i for i in range(1)],
+                              color=None,
+                              )
+
+def createRig():
+    cog = PropCmds.propCmds(side='C',
+                            name='cog',
+                            guideList=['C_cog%s_GDE' % i for i in range(1)],
+                            shape='circle',
+                            controlColor=22,
+                            controlSize=9,
+                            controlRotation=[0, 0, 0],
+                            parentJointsTo = 'rubberBallRoot_JNT',
+                            jointChain=True)
+
+def cleanup():
+    # create
+    pass
+
+"""
