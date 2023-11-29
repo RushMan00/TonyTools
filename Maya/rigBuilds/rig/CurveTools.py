@@ -1,8 +1,7 @@
+import maya.cmds as cmds
 import pymel.core as pm
 
-import pymel.core as pm
-
-def createCurveOnPoints(name='C_curve0_CRV', parent='RIG', nodeList=[]):
+def createCurveOnPoints(nodeList=[], name='C_curve0_CRV', parent='RIG'):
     '''
     createCurveFromNodes() Function
 
@@ -21,11 +20,13 @@ def createCurveOnPoints(name='C_curve0_CRV', parent='RIG', nodeList=[]):
     Version: 1.0.0
     '''
 
-    lst = [pm.PyNode(point).getTranslation(space='world') for point in nodeList]
+    # Get world space positions of the nodes and Create the curve
+    lst = [cmds.xform(point, query=True, translation=True, worldSpace=True) for point in nodeList]
+    crv = cmds.curve(n=name, p=lst)
 
-    crv = pm.curve(n=name, p=lst)
-
+    # Parent the curve if a parent is specified
     if parent:
-        crv.setParent(parent)
+        cmds.parent(crv, parent)
 
-    return lst
+    return crv
+
