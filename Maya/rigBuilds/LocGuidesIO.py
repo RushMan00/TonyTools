@@ -104,10 +104,7 @@ def writeLocGuidesData(tagName='node', filePath='\TonyTools\Maya\projects\pridap
         dataList.append(dataDict)
 
     # Check if the directory exists
-    filePath = filePath.replace("\\", "/")  # replace backslashes with forward slashes
-    if not os.path.exists(filePath):
-        cmds.warning(f"The directory {filePath} does not exist.")
-        return
+    bools, filePath = Checker.checkIfFilePathsExist(filePath)
 
     # Save data to JSON file
     filePath = os.path.join(filePath, 'locGuideData.json')
