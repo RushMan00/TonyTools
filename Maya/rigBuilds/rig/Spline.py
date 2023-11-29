@@ -1,11 +1,10 @@
 import importlib as imp
 import pymel.core as pm
+import maya.cmds as cmds
 
-from rigBuilds.rig import Joints, Tools
+from rigBuilds.rig import Joints, CurveTools, ControlCurves
 imp.reload(Joints)
-imp.reload(Tools)
-
-from rigBuilds import ControlCurves
+imp.reload(CurveTools)
 imp.reload(ControlCurves)
 
 class spline():
@@ -16,13 +15,18 @@ class spline():
                  numControls=4,
                  parentCurve='RIG',
 
+                 shape='circle',
+                 controlColor=22,
+                 controlSize=8,
+                 controlRotation=[0, 0, 0],
+                 parentJointsTo='monkeykingStickRoot_JNT',
+
                  hook = None,
                  # TODO sub controls
                  # subControl=False,
                  # subScale = [.8, .8, .8],
                  # subAdjGrpNumber=2,
                  ):
-
 
         self.side = side
         self.name = name
@@ -31,8 +35,15 @@ class spline():
         self.curveName = '{}_{}_CRV'.format(side,name)
         self.numControls = numControls
         self.parentCurve = parentCurve
+
+        self.shape = shape
+        self.controlColor = controlColor
+        self.controlSize = controlSize
+        self.controlRotation = controlRotation
+        self.parentJointsTo = parentJointsTo
+
         # Vars
-        self.fullName = '{}_{}'.format(side,name)
+        self.fullName = '{}_{}'.format(side, name)
         self.iKhandle = None
         self.effector = None
         self.curveLength = int()
@@ -43,57 +54,56 @@ class spline():
         self.__cleanUp()
 
     def __create(self):
-        self.mainRigGroup = pm.group(n=self.fullName + "_GRP", p='RIG')
-        # create the joint chain
+        self.mainRigGroup = cmds.group(n=self.fullName + "_GRP", em=1)
         spline = Joints.createJointChain(guideList=self.guideList,
                                          parent='SKELE',
                                          primaryAxis='xyz',
                                          orientJointEnd=True,
                                          tag=False,
                                          )
+
         # create the curve points on the joints
-        crv = Tools.createCurveOnPoints(name=self.curveName, parent=self.parentCurve, nodeList=spline)
-        crv = pm.PyNode(self.curveName)
-        crv.setParent(self.mainRigGroup)
+        crv = CurveTools.createCurveOnNodes(name=self.curveName, parent=self.parentCurve, nodeList=spline)
+        cmds.parent(self.curveName, self.mainRigGroup)
         # Create the IK Spline handle
-        ikHandle = pm.ikHandle(n=self.fullName + 'iKHandle',
-                               startJoint=self.jointList[0],
-                               endEffector=self.jointList[-1],
-                               solver="ikSplineSolver")
+        ikHandle = cmds.ikHandle(n=self.fullName + 'iKHandle',
+                                 startJoint=self.jointList[0],
+                                 endEffector=self.jointList[-1],
+                                 solver="ikSplineSolver")
         self.iKhandle = ikHandle[0]
         self.effector = ikHandle[1]
         self.iKhandle.setParent(self.mainRigGroup)
         # Set the curve as the input curve for the IK Spline handle
-        pm.ikHandle(self.iKhandle, e=True, curve=self.curveName)
-        pm.delete(ikHandle[2])
+        cmds.ikHandle(self.iKhandle, e=True, curve=self.curveName)
+        cmds.delete(ikHandle[2])
         # create joints evenly on curve and skin bind the joint controls
         controlJnts = Joints.addJointsAlongCurve(side=self.side,
-                                                name=self.name +'Control',
-                                                curve=self.curveName,
-                                                numJoints=self.numControls, parent='RIG',
-                                                tag=False, skinToCurve=True,
-                                                primaryAxis='xyz',
-                                                secondaryAxisOrient='yup')
+                                                 name=self.name +'Control',
+                                                 curve=self.curveName,
+                                                 numJoints=self.numControls, parent='RIG',
+                                                 tag=False, skinToCurve=True,
+                                                 primaryAxis='xyz',
+                                                 secondaryAxisOrient='yup')
         # create Curve controls
         for num, i in enumerate(controlJnts):
             ControlCurves.controlCurves(name=self.name,
-                                         side=self.side,
-                                         num=num,
-                                         shape='square',
-                                         rotate=[90, 0, 0],
-                                         scale=3,
-                                         parent = [i],
-                                         parentOrConst='const',
-                                         adjGrpNumber=1,
-                                         hook = 'C_globalGimbal0_CNT',
-                                         tag=True,
-                                         )
+                                        side=self.side,
+                                        num=num,
+                                        shape='square',
+                                        rotate=[90, 0, 0],
+                                        scale=3,
+                                        parent = [i],
+                                        parentOrConst='const',
+                                        adjGrpNumber=1,
+                                        hook = 'C_god0_CNT',
+                                        tag=True,
+                                        )
         # create stretchy
 
     def __cleanUp(self):
         # remove locatorGuides Group
-        par = pm.listRelatives(self.guideList[0], parent=True)
-        pm.delete(par)
+        par = cmds.listRelatives(self.guideList[0], parent=True)
+        cmds.delete(par)
 
 
 
