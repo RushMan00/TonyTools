@@ -8,6 +8,33 @@ imp.reload(attribute)
 tagName = 'jointData'
 tagValue = 'JNT'
 
+"""
+biped Orient Joints
+chest       Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z
+            
+neck        Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z
+
+head        Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z 
+            End Joints fix - Joints rotate order xyz (eyes + head )
+            
+Left arm    Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z 
+            End Joints fix - shoulder rotate order yxz - elbow rotate order yzx
+
+thumb       thumb is rotated manully and iterate though joints with cmds.joint(e=1 zso = 1)
+
+left hands  Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z 
+            End Joints fix
+            
+left leg    Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z 
+            End Joints fix - knees rotate order yzx
+            
+toes        Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Y 
+            End Joints fix - Joints rotate order ZXY
+
+all TWIST JOINTS rotate order ZXY
+set perfered angels on root joint
+"""
+
 def tagAsJoints(object=[None]):
     """
     Tag objects as Skin. Objects can be provided as a list or selected in the Maya scene.
@@ -95,14 +122,14 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
         translation = cmds.getAttr(guideNd+".translate")[0]
         rotation = cmds.getAttr(guideNd+".rotate")[0]
         jnts = cmds.joint(
-                        n=jntName,
-                        p=translation,
-                        o=rotation,
-                        )
+                         n=jntName,
+                         p=translation,
+                         o=rotation,
+                         )
         cmds.select(jnts, d=True)
         jointList.append(jnts)
         if chain:
-            # parent - create the joint chian
+            # parent - create the joint chain
             cmds.parent(jnts, ChainedJntList[-1])
             ChainedJntList.append(jnts)
         else:
@@ -110,7 +137,6 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
         # tag
         if tag:
             tagAsJoints(object=[jnts])
-            # attribute.createTags(nodeName=jnts, attrName=tagName, attrValue=tagValue)
 
     # Orient the joint chain
     cmds.select(jointList)
@@ -120,60 +146,69 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
 
     # Orient the end joint
     cmds.select(jointList[-1])
-    cmds.joint(e=True, oj='none',ch=True, zso=orientJointEnd)
+    cmds.joint(e=True, oj='none', ch=True, zso=orientJointEnd)
     cmds.select(jointList[-1], deselect=True)
 
     return jointList
 
-def addJointsAlongCurve(side='C',
+def createJointsOnCurve(side='C',
                         name='JointControl',
                         curve='C_curve0_CRV',
                         numJoints=3, parent=None,
+                        evenlyPlacedJoints=True,
                         tag=False, skinToCurve=True,
                         primaryAxis='xyz',
                         secondaryAxisOrient='yup',
                         ):
-    fullname = '{}_{}'.format(side,name)
+    """
+    this tool to add joints evenly on a curve
 
+    :param side:
+    :param name:
+    :param curve:
+    :param numJoints:
+    :param parent:
+    :param tag:
+    :param skinToCurve:
+    :param primaryAxis:
+    :param secondaryAxisOrient:
+    :return:
+    """
+
+    # checks
     if numJoints < 3:
         cmds.warning('numJoints must be more than 3')
 
-    realCrv = pm.PyNode(curve)
-    crvdup = pm.duplicate(curve)
-    crv = pm.rename(crvdup, name+'DUP')
-    # rebuild the curve with x amount of points with 1 Linear NOT 3Cubic
-    rebldCrv = pm.rebuildCurve(crv, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0,
-                               kep=1, kt=0, s=numJoints+1, d=1, tol=0.01)
-    pycrv = pm.PyNode(crv)
-    jointList = [crv]
+    fullname = '{}_{}'.format(side, name)
+    grp = cmds.group(n=fullname + '_GRP')
 
-    for i in range(numJoints + 2):
+    jointList = []
+
+    for i in range(numJoints):
         # get curve points world location
-        worldPositions = pm.xform(pycrv.cv[i], query=True, translation=True, worldSpace=True)
-        print(worldPositions)
+        worldPositions = cmds.xform(f'{curve}.cv[{i}]', query=True,
+                                    translation=True, worldSpace=True)
 
         # create joint on top of
-        jnts = pm.joint(n='{}_JNT'.format(fullname+str(i)),
-                        p=worldPositions)
-        jnts.radius.set(1.5)
-        jointList.append(jnts.name())
-        pm.joint(jnts,
-                 e=True, oj=primaryAxis,
-                 secondaryAxisOrient=secondaryAxisOrient,
-                 ch=True, zso=True)
-        pm.select(deselect=1)
+        jnts = cmds.joint(n='{}_JNT'.format(fullname+str(i)),
+                          p=worldPositions)
+        cmds.setAttr(jnts + '.radius', 2)
+        jointList.append(jnts)
+        cmds.joint(jnts,
+                   e=True, oj=primaryAxis,
+                   secondaryAxisOrient=secondaryAxisOrient,
+                   ch=True, zso=True)
+        cmds.select(clear=1)
 
-    pm.delete(crv)
     jointList.pop(0)
-    grp = pm.group(n=fullname+'_GRP')
-    pm.parent(jointList, grp)
+    cmds.parent(jointList, grp)
 
     if parent:
-        pm.parent(grp,parent)
+        cmds.parent(grp, parent)
 
     if skinToCurve:
-        skinCluster = pm.skinCluster(jointList, realCrv,
-                                      toSelectedBones=True, tsb=True, bm=0,
-                                      dr=3, mi=1, lw=True, wt=0, omi=False)
+        skinCluster = cmds.skinCluster(jointList, curve,
+                                       toSelectedBones=True, tsb=True, bm=0,
+                                       dr=3, mi=1, lw=True, wt=0, omi=False)
 
     return jointList
