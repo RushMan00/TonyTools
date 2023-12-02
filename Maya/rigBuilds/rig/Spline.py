@@ -13,6 +13,7 @@ class spline():
                  name='splineRig',
                  guideList=['C_spline%s_GDE' % i for i in range(5)],
                  numControls=4,
+                 evenlyPlacedJoints=True,
                  parentCurve='RIG',
 
                  shape='circle',
@@ -32,8 +33,9 @@ class spline():
         self.name = name
         self.guideList = guideList
         self.jointList = [i.replace('_GDE', '_JNT') for i in self.guideList]
-        self.curveName = '{}_{}_CRV'.format(side,name)
+        self.curveName = '{}_{}_CRV'.format(side, name)
         self.numControls = numControls
+        self.evenlyPlacedJoints = evenlyPlacedJoints,
         self.parentCurve = parentCurve
 
         self.shape = shape
@@ -43,7 +45,8 @@ class spline():
         self.parentJointsTo = parentJointsTo
 
         # Vars
-        self.fullName = '{}_{}'.format(side, name)
+        self.fullName = f'{side}_{name}'
+        self.curveName = f'{side}_{name}_CRV'
         self.iKhandle = None
         self.effector = None
         self.curveLength = int()
@@ -55,50 +58,55 @@ class spline():
 
     def __create(self):
         self.mainRigGroup = cmds.group(n=self.fullName + "_GRP", em=1)
-        spline = Joints.createJointChain(guideList=self.guideList,
-                                         parent='SKELE',
-                                         primaryAxis='xyz',
-                                         orientJointEnd=True,
-                                         tag=False,
-                                         )
+        splineList = Joints.createJointChain(guideList=self.guideList,
+                                             parent='SKELE',
+                                             primaryAxis='xyz',
+                                             orientJointEnd=True,
+                                             tag=False,
+                                             )
 
         # create the curve points on the joints
-        crv = CurveTools.createCurveOnNodes(name=self.curveName, parent=self.parentCurve, nodeList=spline)
+        crv = CurveTools.createCurveOnNodes(nodeList=splineList,
+                                            name=self.curveName, parent=None,
+                                            numberOfPoints=5, degree=3,  end=0)
+
         cmds.parent(self.curveName, self.mainRigGroup)
         # Create the IK Spline handle
         ikHandle = cmds.ikHandle(n=self.fullName + 'iKHandle',
                                  startJoint=self.jointList[0],
                                  endEffector=self.jointList[-1],
-                                 solver="ikSplineSolver")
+                                 solver="ikSplineSolver", curve=self.curveName)
+
         self.iKhandle = ikHandle[0]
         self.effector = ikHandle[1]
-        self.iKhandle.setParent(self.mainRigGroup)
+        cmds.parent(self.iKhandle, self.mainRigGroup)
         # Set the curve as the input curve for the IK Spline handle
-        cmds.ikHandle(self.iKhandle, e=True, curve=self.curveName)
-        cmds.delete(ikHandle[2])
+        # cmds.ikHandle(self.iKhandle, e=True, curve=self.curveName)
+        # cmds.delete(ikHandle[2])
         # create joints evenly on curve and skin bind the joint controls
-        controlJnts = Joints.addJointsAlongCurve(side=self.side,
-                                                 name=self.name +'Control',
+        controlJnts = Joints.createJointsOnCurve(side=self.side,
+                                                 name=self.name + 'Control',
                                                  curve=self.curveName,
                                                  numJoints=self.numControls, parent='RIG',
                                                  tag=False, skinToCurve=True,
                                                  primaryAxis='xyz',
                                                  secondaryAxisOrient='yup')
-        # create Curve controls
-        for num, i in enumerate(controlJnts):
-            ControlCurves.controlCurves(name=self.name,
-                                        side=self.side,
-                                        num=num,
-                                        shape='square',
-                                        rotate=[90, 0, 0],
-                                        scale=3,
-                                        parent = [i],
-                                        parentOrConst='const',
-                                        adjGrpNumber=1,
-                                        hook = 'C_god0_CNT',
-                                        tag=True,
-                                        )
-        # create stretchy
+        # # create Curve controls
+        # for num, i in enumerate(controlJnts):
+        #     ControlCurves.controlCurves(name=self.name,
+        #                                 side=self.side,
+        #                                 num=num,
+        #                                 shape='square',
+        #                                 rotate=[0, 0, 0],
+        #                                 scale=self.controlSize,
+        #                                 parent=[i],
+        #                                 parentOrConst='const',
+        #                                 adjGrpNumber=1,
+        #                                 hook='C_god0_CNT',
+        #                                 tag=True,
+        #                                 )
+        # # create stretchy
+        # # x(y)= 5^3 = 1x1x1x1x1
 
     def __cleanUp(self):
         # remove locatorGuides Group
