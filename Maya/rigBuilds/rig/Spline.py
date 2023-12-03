@@ -13,6 +13,7 @@ class spline():
                  name='splineRig',
                  guideList=['C_spline%s_GDE' % i for i in range(5)],
                  numControls=4,
+                 numberOfpointsOnIKCurve=5,
                  evenlyPlacedJoints=True,
                  parentCurve='RIG',
 
@@ -33,7 +34,7 @@ class spline():
         self.name = name
         self.guideList = guideList
         self.jointList = [i.replace('_GDE', '_JNT') for i in self.guideList]
-        self.curveName = '{}_{}_CRV'.format(side, name)
+        self.numberOfpointsOnIKCurve = numberOfpointsOnIKCurve
         self.numControls = numControls
         self.evenlyPlacedJoints = evenlyPlacedJoints,
         self.parentCurve = parentCurve
@@ -68,8 +69,9 @@ class spline():
         # create the curve points on the joints
         crv = CurveTools.createCurveOnNodes(nodeList=splineList,
                                             name=self.curveName, parent=None,
-                                            numberOfPoints=5, degree=3,  end=0)
-
+                                            numberOfPoints=self.numberOfpointsOnIKCurve,
+                                            degree=3, end=1)
+        cmds.delete(crv, constructionHistory=1)
         cmds.parent(self.curveName, self.mainRigGroup)
         # Create the IK Spline handle
         ikHandle = cmds.ikHandle(n=self.fullName + 'iKHandle',
@@ -81,9 +83,6 @@ class spline():
         self.effector = ikHandle[1]
         cmds.parent(self.iKhandle, self.mainRigGroup)
         # Set the curve as the input curve for the IK Spline handle
-        # cmds.ikHandle(self.iKhandle, e=True, curve=self.curveName)
-        # cmds.delete(ikHandle[2])
-        # create joints evenly on curve and skin bind the joint controls
         controlJnts = Joints.createJointsOnCurve(side=self.side,
                                                  name=self.name + 'Control',
                                                  curve=self.curveName,
@@ -105,8 +104,8 @@ class spline():
         #                                 hook='C_god0_CNT',
         #                                 tag=True,
         #                                 )
-        # # create stretchy
-        # # x(y)= 5^3 = 1x1x1x1x1
+        # create stretchy
+        # x(y)= 5^3 = 1x1x1x1x1
 
     def __cleanUp(self):
         # remove locatorGuides Group
