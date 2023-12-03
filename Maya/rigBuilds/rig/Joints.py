@@ -155,8 +155,9 @@ def createJointsOnCurve(side='C',
                         name='JointControl',
                         curve='C_curve0_CRV',
                         numJoints=3, parent=None,
-                        evenlyPlacedJoints=True,
-                        tag=False, skinToCurve=True,
+                        degreeIs3=True,
+                        jointChain=False,
+                        tagJoints=False,
                         primaryAxis='xyz',
                         secondaryAxisOrient='yup',
                         ):
@@ -166,10 +167,13 @@ def createJointsOnCurve(side='C',
     :param side:
     :param name:
     :param curve:
-    :param numJoints:
+    :param numJoints:   if None it will create joints on every CV
+                        or int() it will create joints Evenly curve
+
+    :param degreeIs3:   If True it will not create joints on cv[1] and cv[-2] \
+                        if False it will create joints on every CV
     :param parent:
-    :param tag:
-    :param skinToCurve:
+    :param tag:         tag joints
     :param primaryAxis:
     :param secondaryAxisOrient:
     :return:
@@ -179,36 +183,115 @@ def createJointsOnCurve(side='C',
     if numJoints < 3:
         cmds.warning('numJoints must be more than 3')
 
+    # setup
     fullname = '{}_{}'.format(side, name)
     grp = cmds.group(n=fullname + '_GRP')
 
     jointList = []
+    last_joint = None
 
-    for i in range(numJoints):
-        # get curve points world location
-        worldPositions = cmds.xform(f'{curve}.cv[{i}]', query=True,
-                                    translation=True, worldSpace=True)
+    if numJoints == int():
+        # this is to place the joints on each CV
+        for i in range(numJoints):
+            # get curve points world location
+            worldPositions = cmds.xform(f'{curve}.cv[{i}]', query=True,
+                                        translation=True, worldSpace=True)
 
-        # create joint on top of
-        jnts = cmds.joint(n='{}_JNT'.format(fullname+str(i)),
-                          p=worldPositions)
-        cmds.setAttr(jnts + '.radius', 2)
-        jointList.append(jnts)
-        cmds.joint(jnts,
-                   e=True, oj=primaryAxis,
-                   secondaryAxisOrient=secondaryAxisOrient,
-                   ch=True, zso=True)
-        cmds.select(clear=1)
+            # create joint on top of
+            jnts = cmds.joint(n='{}_JNT'.format(fullname + str(i)),
+                              p=worldPositions)
+            cmds.setAttr(jnts + '.radius', 2)
+            jointList.append(jnts)
+            cmds.joint(jnts,
+                       e=True, oj=primaryAxis,
+                       secondaryAxisOrient=secondaryAxisOrient,
+                       ch=True, zso=True)
+            cmds.select(clear=1)
 
-    jointList.pop(0)
-    cmds.parent(jointList, grp)
+        jointList.pop(0)
+        cmds.parent(jointList, grp)
 
+    else:
+        # this is to Evenly place the joints along the curve
+        for i in range(numJoints):
+            # Calculate the parameter value along the curve for this joint
+            param = float(i) / (numJoints - 1) if numJoints > 1 else 0.5
+
+            # Get the position on the curve
+            point = cmds.pointOnCurve(curve, pr=param, p=True, turnOnPercentage=True)
+            jointName = cmds.joint(p=point)
+            cmds.select(clear=1)
+            last_joint = jointName
+            jointList.append(jointName)
+
+
+    # clean up
     if parent:
         cmds.parent(grp, parent)
 
-    if skinToCurve:
-        skinCluster = cmds.skinCluster(jointList, curve,
-                                       toSelectedBones=True, tsb=True, bm=0,
-                                       dr=3, mi=1, lw=True, wt=0, omi=False)
+    if tagJoints:
+        tagAsJoints(jointList)
 
     return jointList
+
+
+def createJointsBetweenObjects(objA, objB, numJoints, chainJoints=False,
+                               parent=None, orientJoint='xyz',
+                               secondaryAxisOrient="yup", tag=False):
+    """
+    Create a specified number of joints evenly distributed between two objects in Maya.
+
+    Args:
+    - objA (str): Name of the first object.
+    - objB (str): Name of the second object.
+    - numJoints (int): Number of joints to create.
+    - chainJoints (bool): Whether to chain the joints together.
+    - parent (str): Name of the parent object to parent the joints under.
+
+    Returns:
+    - list: Names of the created joints.
+    """
+    if numJoints < 1:
+        cmds.error("Number of joints must be at least 1")
+        return
+
+    # Get the world space positions of the objects
+    posA = cmds.xform(objA, query=True, worldSpace=True, translation=True)
+    posB = cmds.xform(objB, query=True, worldSpace=True, translation=True)
+
+    # Create joints
+    joints = []
+    lastJoint = None
+    for i in range(numJoints):
+        # Interpolate between the positions
+        ratio = float(i) / (numJoints - 1) if numJoints > 1 else 0.5
+        jointPos = (
+            posA[0] + (posB[0] - posA[0]) * ratio,
+            posA[1] + (posB[1] - posA[1]) * ratio,
+            posA[2] + (posB[2] - posA[2]) * ratio
+        )
+
+        if chainJoints and lastJoint:
+            # If chaining, set the parent to the last joint
+            cmds.select(lastJoint)
+
+        jointName = cmds.joint(p=jointPos)
+        lastJoint = jointName
+        joints.append(jointName)
+
+        if chainJoints:
+            cmds.joint(lastJoint, e=True, zso=True, oj=orientJoint, sao=secondaryAxisOrient, ch=True)
+        else:
+            cmds.joint(lastJoint, e=True, zso=True, oj=orientJoint, sao=secondaryAxisOrient, ch=True)
+            cmds.select(clear=1)
+    # Parent to the specified parent object, if provided
+    if parent:
+        if chainJoints:
+            cmds.parent(joints[0], parent)
+        else:
+            cmds.parent(joints, parent)
+    if tag:
+        tagAsJoints(joints)
+
+    return joints
+
