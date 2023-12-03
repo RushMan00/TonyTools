@@ -37,9 +37,11 @@ def createCurveOnNodes(nodeList=[], name='C_curve0_CRV',
         cmds.rename(shapes[0], name + 'Shape')
 
     # Rebuild the curve
-    cmds.rebuildCurve(name, ch=0, rpo=1, rt=0, end=end, kr=0,
-                      kcp=0, kep=1, kt=0, s=numberOfPoints - 1,
-                      d=degree, tol=0.01)
+    rebild = cmds.rebuildCurve(name, ch=0, rpo=1, rt=0, end=end, kr=0,
+                               kcp=0, kep=1, kt=0, s=numberOfPoints - 1,
+                               d=degree, tol=0.01)
+
+
 
     # Parent the curve if a parent is specified
     if parent:
