@@ -95,7 +95,7 @@ class baseRig2():
         self.name = name
         self.size = size
         self.addRootJoint = addRootJoint
-        self.groups = ['RIG', 'GEO', 'SKELE']
+        self.groups = ['GEO', 'RIG', 'SKELE']
 
         # TODO
         # self.colour = colour
@@ -109,12 +109,13 @@ class baseRig2():
     def __createStructure(self):
         # create the main group
         mainGrp = cmds.group(em=True, n=self.name)
+        cmds.select(clear=1)
         # create the child groups
         for group in self.groups:
             grp = cmds.group(em=True, n=group, p=mainGrp)
-
+            cmds.select(clear=1)
         main = cmds.group(em=True, n='C_main_GRP', p='RIG')
-
+        cmds.select(clear=1)
         globalControl = ControlCurves.controlCurves(name='global',
                                                     side='C',
                                                     shape='global',
@@ -154,8 +155,9 @@ class baseRig2():
                              f'{globalControl.getControlName()}.s{axis}')
 
         if self.addRootJoint:
-            jnt = cmds.joint(n=f'{self.name}Root_JNT')
-            cmds.parent(jnt, self.groups)
+            cmds.select(clear=1)
+            jnt = cmds.joint(n=f'root_JNT')
+            cmds.parent(jnt, self.groups[-1])
 
             # connect to global scale
             for axis in 'xyz':
@@ -168,6 +170,4 @@ class baseRig2():
             cmds.parentConstraint(godControl.getControlName(),
                                   jnt
                                   )
-
-
         # clean up
