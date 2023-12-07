@@ -155,9 +155,9 @@ def createJointsOnCurve(side='C',
                         name='JointControl',
                         curve='C_curve0_CRV',
                         numJoints=3, parent=None,
-                        degreeIs3=True,
                         jointChain=False,
                         tagJoints=False,
+                        skinToCurve=False,
                         primaryAxis='xyz',
                         secondaryAxisOrient='yup',
                         ):
@@ -167,11 +167,8 @@ def createJointsOnCurve(side='C',
     :param side:
     :param name:
     :param curve:
-    :param numJoints:   if None it will create joints on every CV
+    :param numJoints:   if str() it will create joints on every CV
                         or int() it will create joints Evenly curve
-
-    :param degreeIs3:   If True it will not create joints on cv[1] and cv[-2] \
-                        if False it will create joints on every CV
     :param parent:
     :param tag:         tag joints
     :param primaryAxis:
@@ -180,55 +177,60 @@ def createJointsOnCurve(side='C',
     """
 
     # checks
-    if numJoints < 3:
-        cmds.warning('numJoints must be more than 3')
+    # if numJoints < 3:
+    #     cmds.warning('numJoints must be more than 3')
 
     # setup
     fullname = '{}_{}'.format(side, name)
-    grp = cmds.group(n=fullname + '_GRP')
+    grp = cmds.group(empty=True, n=fullname + '_GRP')
+    cmds.select(clear=True)
 
     jointList = []
     last_joint = None
 
-    if numJoints == int():
-        # this is to place the joints on each CV
+    if isinstance(numJoints, int):
+        # Create joints evenly along the curve
         for i in range(numJoints):
-            # get curve points world location
-            worldPositions = cmds.xform(f'{curve}.cv[{i}]', query=True,
-                                        translation=True, worldSpace=True)
-
-            # create joint on top of
-            jnts = cmds.joint(n='{}_JNT'.format(fullname + str(i)),
-                              p=worldPositions)
-            cmds.setAttr(jnts + '.radius', 2)
-            jointList.append(jnts)
-            cmds.joint(jnts,
-                       e=True, oj=primaryAxis,
-                       secondaryAxisOrient=secondaryAxisOrient,
-                       ch=True, zso=True)
-            cmds.select(clear=1)
-
-        jointList.pop(0)
-        cmds.parent(jointList, grp)
-
-    else:
-        # this is to Evenly place the joints along the curve
-        for i in range(numJoints):
-            # Calculate the parameter value along the curve for this joint
             param = float(i) / (numJoints - 1) if numJoints > 1 else 0.5
-
-            # Get the position on the curve
             point = cmds.pointOnCurve(curve, pr=param, p=True, turnOnPercentage=True)
-            jointName = cmds.joint(p=point)
-            cmds.select(clear=1)
-            last_joint = jointName
+            jointName = cmds.joint(n='{}_JNT'.format(fullname + str(i)),
+                                   p=point)
+            cmds.select(clear=True)
+            cmds.parent(jointName, grp)
             jointList.append(jointName)
 
+    elif isinstance(numJoints, str):
+        # Get the number of CVs on the curve
+        numCVs = cmds.getAttr(curve + '.spans') + cmds.getAttr(curve + '.degree')
+        # Create joints on each CV
+        for i in range(numCVs):
+            worldPositions = cmds.xform(f'{curve}.cv[{i}]', query=True,
+                                        translation=True, worldSpace=True)
+            jointName = cmds.joint(n='{}_JNT'.format(fullname + str(i)),
+                                   p=worldPositions)
+            cmds.setAttr(jointName + '.radius', 2)
+            jointList.append(jointName)
+            cmds.joint(jointName, e=True, oj=primaryAxis,
+                       secondaryAxisOrient=secondaryAxisOrient,
+                       ch=True, zso=True)
+            cmds.select(clear=True)
+            cmds.parent(jointName, grp)
+
+    else:
+        cmds.warning("Please define number of joints with int() or str() to create joints on every CV")
 
     # clean up
+    if jointChain:
+        for i in range(1, len(jointList)):
+            cmds.parent(jointList[i], jointList[i - 1])
+        cmds.select(jointList)
+        cmds.joint(e=True, oj=primaryAxis,
+                   secondaryAxisOrient=secondaryAxisOrient,
+                   ch=True, zso=True)
+    if skinToCurve:
+        cmds.skinCluster(jointList, curve, toSelectedBones=True)
     if parent:
         cmds.parent(grp, parent)
-
     if tagJoints:
         tagAsJoints(jointList)
 
