@@ -151,7 +151,7 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
 
     return jointList
 
-def createJointsOnCurve(side='C',
+def jointChain(side='C',
                         name='JointControl',
                         curve='C_curve0_CRV',
                         numJoints=3, parent=None,
@@ -230,7 +230,9 @@ def createJointsOnCurve(side='C',
     if skinToCurve:
         cmds.skinCluster(jointList, curve, toSelectedBones=True)
     if parent:
-        cmds.parent(grp, parent)
+        if jointChain:
+            cmds.parent(jointList[0], parent)
+        cmds.parent(jointList, parent)
     if tagJoints:
         tagAsJoints(jointList)
 
