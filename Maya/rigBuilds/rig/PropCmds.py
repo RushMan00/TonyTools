@@ -20,6 +20,7 @@ class propCmds():
                  lockHideAttrs=['sx', 'sy', 'sz'],
                  jointChain=True,
                  controlChain = True,
+                 tagJoints=True,
 
                  # TODO sub controls
                  subControls = True,
@@ -39,6 +40,7 @@ class propCmds():
         self.lockHideAttrs = lockHideAttrs
         self.jointChain = jointChain
         self.controlChain = controlChain
+        self.tagJoints = tagJoints
 
         # Vars
         self.fullName = '{}_{}'.format(side, name)
@@ -61,7 +63,7 @@ class propCmds():
                                                primaryAxis='xyz',
                                                orientJointEnd=True,
                                                chain=self.jointChain,
-                                               tag=True,
+                                               tag=self.tagJoints,
                                                )
         # Figure how to create control chain
         if self.controlChain:
