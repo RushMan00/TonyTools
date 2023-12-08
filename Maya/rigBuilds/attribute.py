@@ -1,6 +1,20 @@
 import maya.OpenMaya as om
 import maya.cmds as cmds
 import pymel.core as pm
+def addAttrTitleSperator(nodeName='C_global0_CNT', attrName='Title'):
+    # Adding an enum attribute to the specified node
+    cmds.addAttr(nodeName, longName=attrName, attributeType='enum', enumName='Setup', keyable=True)
+    cmds.setAttr(f'{nodeName}.{attrName}', e=1, lock=0, channelBox=0)
+    return f'{nodeName}.{attrName}'
+
+def addAttr(nodeName='C_global0_CNT', attrName='Title',
+            attributeType='float', min=0.0, max=1.0,
+            defaultValue=0.0):
+    # Adding an enum attribute to the specified node
+    cmds.addAttr(nodeName, longName=attrName, attributeType=attributeType,
+                 min=min, max=max, defaultValue=defaultValue, keyable=True)
+    cmds.setAttr(f'{nodeName}.{attrName}', e=1, lock=0, channelBox=0)
+    return f'{nodeName}.{attrName}'
 
 def createTags(nodeName='C_joint0_JNT', attrName= 'myTag', attrValue='myTagValue'):
     """
