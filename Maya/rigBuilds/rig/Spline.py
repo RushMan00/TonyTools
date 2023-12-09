@@ -141,15 +141,28 @@ class spline():
         expoAttrs.append(attrExpoC)
 
         squashMuliDiv = cmds.createNode('multiplyDivide', n=self.fullName + 'Squash_multiplyDivide')
+        cmds.setAttr(squashMuliDiv + ".operation", 2)
         cmds.connectAttr(curveInfoNode + ".arcLength", squashMuliDiv + '.input2X', f=1)
         cmds.setAttr(squashMuliDiv + '.input1X', arcLength)
         expoStr=['ExpoA', 'ExpoB', 'ExpoC']
         for attr, str in zip(expoAttrs, expoStr):
-            squashMuliDiv = cmds.createNode('multiplyDivide', n=f'{self.fullName}{str}_multiplyDivide')
-            cmds.setAttr(squashMuliDiv + ".operation", 3)
-            cmds.connectAttr(attr, squashMuliDiv + ".input1X", f=1)
-            cmds.connectAttr(attr, squashMuliDiv + ".input2X", f=1)
-            cmds.connectAttr(squashMuliDiv + ".input1X", str+".input1X", f=1)
+            expo = cmds.createNode('multiplyDivide', n=f'{self.fullName}{str}_multiplyDivide')
+            cmds.setAttr(expo + ".operation", 3)
+
+            cmds.connectAttr(f'{attr}', expo + ".input1X", f=1)
+            cmds.connectAttr(attr, expo + ".input1X", f=1)
+            cmds.connectAttr(squashMuliDiv+".outputX", expo + ".input2X", f=1)
+            # cmds.connectAttr(squashMuliDiv + ".input1X", squashMuliDiv+".input1X", f=1)
+
+        cmds.connectAttr(self.fullName + expoStr[0] + "_multiplyDivide.outputX", 'C_stick1_JNT' + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[0] + "_multiplyDivide.outputX", 'C_stick1_JNT' + ".scaleZ", f=1)
+
+        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", 'C_stick2_JNT' + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", 'C_stick2_JNT' + ".scaleZ", f=1)
+
+        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", 'C_stick3_JNT' + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", 'C_stick3_JNT' + ".scaleZ", f=1)
+
 
     def __cleanUp(self):
         # remove locatorGuides Group
