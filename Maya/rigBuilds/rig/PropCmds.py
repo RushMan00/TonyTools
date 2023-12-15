@@ -58,7 +58,9 @@ class propCmds():
         cmds.select(clear=True)
 
         # create the joints
-        self.jntList = Joints.createJointChain(guideList=self.guideList,
+        self.jntList = Joints.createJointChain(side=self.side,
+                                               name=self.name,
+                                               guideList=self.guideList,
                                                parent=self.mainRigGroup,
                                                primaryAxis='xyz',
                                                orientJointEnd=True,
@@ -91,18 +93,18 @@ class propCmds():
             print(f'creating for {self.jntList}')
             for num, parent in enumerate(self.jntList):
                 self.controlList = ControlCurves.controlCurves(name=self.name,
-                                                              side=self.side,
-                                                              num=num,
-                                                              shape=self.shape,
-                                                              rotate=self.controlRotation,
-                                                              scale=self.controlSize,
-                                                              parent=parent,
-                                                              parentOrConst='const',
-                                                              adjGrpNumber=1,
-                                                              hook=self.parentControlsTo,
-                                                              lockHideAttrs=self.lockHideAttrs,
-                                                              tag=True,
-                                                              )
+                                                               side=self.side,
+                                                               num=num,
+                                                               shape=self.shape,
+                                                               rotate=self.controlRotation,
+                                                               scale=self.controlSize,
+                                                               parent=parent,
+                                                               parentOrConst='const',
+                                                               adjGrpNumber=1,
+                                                               hook=self.parentControlsTo,
+                                                               lockHideAttrs=self.lockHideAttrs,
+                                                               tag=True,
+                                                               )
 
     def __cleanUp(self):
         # remove locatorGuides Group

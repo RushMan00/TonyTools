@@ -63,12 +63,14 @@ class spline():
 
     def __create(self):
         self.mainRigGroup = cmds.group(n=self.fullName + "SplineRig_GRP", em=1, parent='RIG')
-        splineJointList = Joints.createJointChain(guideList=self.guideList,
-                                             parent=self.parentJointsTo,
-                                             primaryAxis='xyz',
-                                             orientJointEnd=True,
-                                             tag=self.tagJoints,
-                                             )
+        splineJointList = Joints.createJointChain(side=self.side,
+                                                  name=self.name,
+                                                  guideList=self.guideList,
+                                                  parent=self.parentJointsTo,
+                                                  primaryAxis='xyz',
+                                                  orientJointEnd=True,
+                                                  tag=self.tagJoints,
+                                                  )
 
         # create the curve points on the joints
         self.curveName = CurveTools.createCurveOnNodes(nodeList=splineJointList,
@@ -95,7 +97,6 @@ class spline():
                                                  tagJoints=False, skinToCurve=True,
                                                  primaryAxis='xyz',
                                                  secondaryAxisOrient='yup')
-        # cmds.group(n=)
         # create Curve controls
         for num, i in enumerate(controlJnts):
             ControlCurves.controlCurves(name=self.name,
@@ -152,16 +153,15 @@ class spline():
             cmds.connectAttr(f'{attr}', expo + ".input1X", f=1)
             cmds.connectAttr(attr, expo + ".input1X", f=1)
             cmds.connectAttr(squashMuliDiv+".outputX", expo + ".input2X", f=1)
-            # cmds.connectAttr(squashMuliDiv + ".input1X", squashMuliDiv+".input1X", f=1)
 
-        cmds.connectAttr(self.fullName + expoStr[0] + "_multiplyDivide.outputX", 'C_stick1_JNT' + ".scaleY", f=1)
-        cmds.connectAttr(self.fullName +expoStr[0] + "_multiplyDivide.outputX", 'C_stick1_JNT' + ".scaleZ", f=1)
+        cmds.connectAttr(self.fullName + expoStr[0] + "_multiplyDivide.outputX", self.jointList[1] + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[0] + "_multiplyDivide.outputX", self.jointList[1] + ".scaleZ", f=1)
 
-        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", 'C_stick2_JNT' + ".scaleY", f=1)
-        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", 'C_stick2_JNT' + ".scaleZ", f=1)
+        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", self.jointList[2] + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[1] + "_multiplyDivide.outputX", self.jointList[2] + ".scaleZ", f=1)
 
-        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", 'C_stick3_JNT' + ".scaleY", f=1)
-        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", 'C_stick3_JNT' + ".scaleZ", f=1)
+        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", self.jointList[3] + ".scaleY", f=1)
+        cmds.connectAttr(self.fullName +expoStr[2] + "_multiplyDivide.outputX", self.jointList[3] + ".scaleZ", f=1)
 
 
     def __cleanUp(self):
