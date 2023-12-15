@@ -71,11 +71,14 @@ def selectTaggedJoints():
     return ListofObject
 
 
-def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
+def createJointChain(side='C',
+                     name='name',
+                     guideList=['C_spine%s_GDE' % i for i in range(5)],
                      parent='SKELE',
                      primaryAxis='xyz',
                      secondaryAxisOrient = 'yup',
                      orientJointEnd=True,
+                     deleteGuidesJoints=True,
                      chain=True,
                      tag=True,
                      ):
@@ -108,33 +111,36 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
     Date: 05/25/2023
     Version: 1.0.0
     '''
-
+    # vars
+    fullName=f"{side}_{name}"
     jointList = []
-    ChainedJntList = []
-    ChainedJntList.append(parent)
-    for guideNd in guideList:
+    chainedJntList = []
+
+    chainedJntList.append(parent)
+    for num, guideNd in enumerate(guideList):
         cmds.select(clear=True)
         # delete existing joint chain from scene
-        jntName = guideNd.replace('_GDE', '_JNT')
-        if cmds.objExists(jntName):
-            cmds.delete(jntName)
+        if deleteGuidesJoints:
+            jntName = guideNd.replace('_GDE', '_JNT')
+            if cmds.objExists(jntName):
+                cmds.delete(jntName)
         # create joints
         translation = cmds.getAttr(guideNd+".translate")[0]
         rotation = cmds.getAttr(guideNd+".rotate")[0]
         jnts = cmds.joint(
-                         n=jntName,
+                         n=f"{fullName}{num}_JNT",
                          p=translation,
                          o=rotation,
                          )
         cmds.select(jnts, d=True)
         jointList.append(jnts)
+
         if chain:
-            # parent - create the joint chain
-            cmds.parent(jnts, ChainedJntList[-1])
-            ChainedJntList.append(jnts)
+            cmds.parent(jnts, chainedJntList[-1])
+            chainedJntList.append(jnts)
         else:
-            cmds.parent(jnts, ChainedJntList)
-        # tag
+            cmds.parent(jnts, chainedJntList)
+
         if tag:
             tagAsJoints(object=[jnts])
 
@@ -151,8 +157,8 @@ def createJointChain(guideList=['C_spine%s_GDE' % i for i in range(5)],
 
     return jointList
 
-def jointChain(side='C',
-                        name='JointControl',
+def createJointsOnCurve(side='C',
+                        name='name',
                         curve='C_curve0_CRV',
                         numJoints=3, parent=None,
                         jointChain=False,
@@ -299,3 +305,25 @@ def createJointsBetweenObjects(objA, objB, numJoints, chainJoints=False,
 
     return joints
 
+def duplicateAndRenameJointChain(rootJointName, newJointPrefix):
+    """
+    Duplicate and rename a joint chain in Autodesk Maya.
+
+    Args:
+    rootJointName (str): The name of the root joint of the chain to be duplicated.
+    newJointPrefix (str): The prefix to be used for the new joint names.
+
+    Returns:
+    list: A list of new joint names.
+    """
+    # Duplicate the joint chain
+    duplicatedJoints = cmds.duplicate(rootJointName, rc=True)
+
+    # Rename the duplicated joints
+    newJointNames = []
+    for i, joint in enumerate(duplicatedJoints):
+        newName = newJointPrefix + str(i)
+        cmds.rename(joint, newName)
+        newJointNames.append(newName)
+
+    return newJointNames
