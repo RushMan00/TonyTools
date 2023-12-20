@@ -47,13 +47,13 @@ def checkIfFilePathsExist(filePath=r'D:/OneDrive/TonyTools'):
         print(f"The directory {filePath} exists!")
         return True, filePath
 
-def checkIfObjectExist(obj_list=[]):
-    for obj in obj_list:
-        if not pm.objExists(obj):
+def checkIfObjectExist(objectList=[]):
+    for obj in objectList:
+        print(f"checking if '{obj}' exist")
+        if not cmds.objExists(obj):
             print(f"Object '{obj}' doesn't exist")
             return False
-
-    print("Object(s) exist")
+    print(f"Object(s) {obj} exist")
     return True
 
 def checkIfObjectExist2(objList=[]):
@@ -65,24 +65,18 @@ def checkIfObjectExist2(objList=[]):
     print("Object(s) exist")
     return True
 
-def checkingSides(self):
-    if self.side == 'C':
-        self.side = 'C'
-        if not self.color:
-            self.color = 22
-            self.__createControl()
+def checkingSides(side='C', color=None):
+    if side not in ['C', 'L', 'R']:
+        print('Please specify a "side".')  # or use a warning mechanism appropriate for your environment
+        return color
 
-    elif self.side == 'L':
-        self.side = 'L'
-        if not self.color:
-            self.color = 4
-            self.__createControl()
+    if side == 'C' and color is None:
+        color = 22
+    elif side == 'L' and color is None:
+        color = 4
+        # Add the specific action for 'L' side here
+    elif side == 'R' and color is None:
+        color = 6
+        # Add the specific action for 'R' side here
 
-    elif self.side == 'R':
-        self.side = 'R'
-        if not self.color:
-            self.color = 6
-            self.__createControl()
-    else:
-        pm.warning('Please specify a "side".')
-        return
+    return color
