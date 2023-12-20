@@ -56,26 +56,90 @@ class limbs():
 
     def __checker(self):
         # check if object exist by Names
+        # must have 3 joints adviable
+
         pass
 
     def __create(self):
+        """
+        Notes: biped Orient Joints
+        Left arm    Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z
+                    End Joints fix - shoulder rotate order yxz - elbow rotate order yzx
+
+        left leg    Primary Axis Y - Secondary Axis Z - Secondary Axis World Orientation Z
+                    End Joints fix - knees rotate order yzx
+
+        all TWIST JOINTS rotate order ZXY
+        set perfered angels on root joint
+        """
+
         self.mainRigGroup = cmds.group(n=self.fullName + "limbRig_GRP", em=1, parent='RIG')
-        mainLimbJoints = Joints.createJointChain(guideList=self.guideList,
+        mainLimbJoints = Joints.createJointChain(side=self.side,
+                                                 name=self.name+'Main',
+                                                 guideList=self.guideList,
                                                  parent=self.parentJointsTo,
-                                                 primaryAxis='xyz',
+                                                 primaryAxis='yzx',
                                                  orientJointEnd=True,
                                                  chain=True,
+                                                 deleteGuidesJoints=False,
                                                  tag=self.tagJoints,
                                                  )
 
-        IKLimbJoints = Joints.createJointChain(guideList=self.guideList,
+        IKLimbJoints = Joints.createJointChain(side=self.side,
+                                               name=self.name+'IK',
+                                               guideList=self.guideList,
                                                parent=self.parentJointsTo,
-                                               primaryAxis='xyz',
+                                               primaryAxis='yzx',
                                                orientJointEnd=True,
                                                chain=True,
-                                               tag=self.tagJoints,
+                                               deleteGuidesJoints=False,
+                                               tag=False,
                                                )
+
+        FKLimbJoints = Joints.createJointChain(side=self.side,
+                                               name=self.name+'FK',
+                                               guideList=self.guideList,
+                                               parent=self.parentJointsTo,
+                                               primaryAxis='yzx',
+                                               orientJointEnd=True,
+                                               chain=True,
+                                               deleteGuidesJoints=False,
+                                               tag=False,
+                                               )
+
+        firstJointList = [mainLimbJoints[0], IKLimbJoints[0], FKLimbJoints[0]]
+        secondJointList = [mainLimbJoints[1], IKLimbJoints[1], FKLimbJoints[1]]
+        thirdJointList = [mainLimbJoints[2], IKLimbJoints[2], FKLimbJoints[2]]
+
+        # setting rotate order for first Joint(arms)
+        for firstJoint in firstJointList:
+            cmds.setAttr(firstJoint+".rotateOrder", 4)
+        # setting rotate order for second Joint(elbow)
+        for secondJoint in secondJointList:
+            cmds.setAttr(secondJoint+".rotateOrder", 1)
+
+        # FK IK Setup
+        cmds.parentConstraint(firstJointList[::-1], mo=1, w=1)
+        cmds.parentConstraint(secondJointList[::-1], mo=1, w=1)
+        cmds.parentConstraint(thirdJointList[::-1], mo=1, w=1)
+
+        # creating controls for FK
+        for num, i in enumerate(FKLimbJoints):
+            ControlCurves.controlCurves(name=self.name,
+                                        side=self.side,
+                                        num=num,
+                                        shape='circle',
+                                        rotate=[0, 0, 0],
+                                        scale=self.FKcontrolSize,
+                                        parent=[i],
+                                        parentOrConst='const',
+                                        adjGrpNumber=1,
+                                        hook='C_cog0_CNT',
+                                        tag=True,
+                                        )
+
     def __cleanUp(self):
-        # remove locatorGuides Group
-        par = cmds.listRelatives(self.guideList[0], parent=True)
-        cmds.delete(par)
+        # # remove locatorGuides Group
+        # par = cmds.listRelatives(self.guideList[0], parent=True)
+        # cmds.delete(par)
+        pass
