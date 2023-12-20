@@ -14,8 +14,8 @@ class locGuides():
                  size=1,
                  nameList=['spine%s' % i for i in range(1)],
                  color=1,
-                 mirror = False,
-                 mirrorRotatoin = False,
+                 mirror=False,
+                 mirrorRotatoin=False,
                 # # TODO
                 #  upaxis:'y',
                 # parent:'C_joint1_JNT',
