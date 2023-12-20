@@ -114,9 +114,7 @@ def createJointChain(side='C',
     # vars
     fullName=f"{side}_{name}"
     jointList = []
-    chainedJntList = []
 
-    chainedJntList.append(parent)
     for num, guideNd in enumerate(guideList):
         cmds.select(clear=True)
         # delete existing joint chain from scene
@@ -127,22 +125,24 @@ def createJointChain(side='C',
         # create joints
         translation = cmds.getAttr(guideNd+".translate")[0]
         rotation = cmds.getAttr(guideNd+".rotate")[0]
-        jnts = cmds.joint(
+        jnt = cmds.joint(
                          n=f"{fullName}{num}_JNT",
                          p=translation,
                          o=rotation,
                          )
-        cmds.select(jnts, d=True)
-        jointList.append(jnts)
+        jointList.append(jnt)
 
-        if chain:
-            cmds.parent(jnts, chainedJntList[-1])
-            chainedJntList.append(jnts)
-        else:
-            cmds.parent(jnts, chainedJntList)
+        if chain and num > 0:
+            # Parent each joint to the previous one, except for the first joint
+            cmds.parent(jnt, jointList[num - 1])
 
-        if tag:
-            tagAsJoints(object=[jnts])
+    # If there's a parent specified and chain is False, parent the first joint to it
+    if parent and not chain:
+        cmds.parent(jointList[0], parent)
+
+    # If there's a parent specified and chain is True, parent the whole chain
+    elif parent and chain:
+        cmds.parent(jointList[0], parent)
 
     # Orient the joint chain
     cmds.select(jointList)
@@ -151,9 +151,11 @@ def createJointChain(side='C',
                ch=True, zso=True)
 
     # Orient the end joint
-    cmds.select(jointList[-1])
-    cmds.joint(e=True, oj='none', ch=True, zso=orientJointEnd)
-    cmds.select(jointList[-1], deselect=True)
+    if orientJointEnd:
+        cmds.joint(jointList[-1], e=True, oj='none', ch=True, zso=True)
+
+    if tag:
+        tagAsJoints(jointList)
 
     return jointList
 
