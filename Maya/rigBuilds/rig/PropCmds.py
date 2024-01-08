@@ -15,7 +15,7 @@ class propCmds():
                  controlColor=22,
                  controlSize=1,
                  controlRotation=[90, 0, 0],
-                 parentControlsTo='C_god0_CNT',
+                 parentControlsTo=None,
                  parentJointsTo='SKELE',
                  lockHideAttrs=['sx', 'sy', 'sz'],
                  jointChain=True,
@@ -67,44 +67,20 @@ class propCmds():
                                                chain=self.jointChain,
                                                tag=self.tagJoints,
                                                )
-        # Figure how to create control chain
-        if self.controlChain:
-            print(f'creating for control chain')
-            hook = []
-            hook.append(self.parentControlsTo)
-            for num, parent in enumerate(self.jntList):
-                self.controlList = ControlCurves.controlCurves(name=self.name,
-                                                               side=self.side,
-                                                               num=num,
-                                                               shape=self.shape,
-                                                               rotate=self.controlRotation,
-                                                               scale=self.controlSize,
-                                                               parent=parent,
-                                                               parentOrConst='const',
-                                                               adjGrpNumber=1,
-                                                               hook=hook[-1],
-                                                               lockHideAttrs=self.lockHideAttrs,
-                                                               tag=True,
-                                                               )
-                hook.append(self.controlList.getControlName())
-
-        else:
-            # create Curve controls
-            print(f'creating for {self.jntList}')
-            for num, parent in enumerate(self.jntList):
-                self.controlList = ControlCurves.controlCurves(name=self.name,
-                                                               side=self.side,
-                                                               num=num,
-                                                               shape=self.shape,
-                                                               rotate=self.controlRotation,
-                                                               scale=self.controlSize,
-                                                               parent=parent,
-                                                               parentOrConst='const',
-                                                               adjGrpNumber=1,
-                                                               hook=self.parentControlsTo,
-                                                               lockHideAttrs=self.lockHideAttrs,
-                                                               tag=True,
-                                                               )
+        
+        self.controlList = ControlCurves.controlCurves(name=self.name,
+                                                        side=self.side,
+                                                        nodeList=self.jntList,
+                                                        shape=self.shape,
+                                                        rotate=self.controlRotation,
+                                                        scale=self.controlSize,
+                                                        parentOrConst='const',
+                                                        adjGrpNumber=1,
+                                                        controlChain=self.controlChain,
+                                                        parentControlsTo=self.parentControlsTo,
+                                                        lockHideAttrs=self.lockHideAttrs,
+                                                        tag=True,
+                                                        )
 
     def __cleanUp(self):
         # remove locatorGuides Group

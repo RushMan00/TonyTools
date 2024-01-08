@@ -124,19 +124,18 @@ class limbs():
         cmds.parentConstraint(thirdJointList[::-1], mo=1, w=1)
 
         # creating controls for FK
-        for num, i in enumerate(FKLimbJoints):
-            ControlCurves.controlCurves(name=self.name,
-                                        side=self.side,
-                                        num=num,
-                                        shape='circle',
-                                        rotate=[0, 0, 0],
-                                        scale=self.FKcontrolSize,
-                                        parent=[i],
-                                        parentOrConst='const',
-                                        adjGrpNumber=1,
-                                        hook='C_cog0_CNT',
-                                        tag=True,
-                                        )
+        ControlCurves.controlCurves(name=self.name,
+                                    side=self.side,
+                                    nodeList=FKLimbJoints,
+                                    shape='circle',
+                                    rotate=[0, 0, 0],
+                                    scale=self.FKcontrolSize,
+                                    parentOrConst='const',
+                                    adjGrpNumber=1,
+                                    controlChain=True,
+                                    parentControlsTo='C_cog0_CNT',
+                                    tag=True,
+                                    )
 
     def __cleanUp(self):
         # # remove locatorGuides Group

@@ -5,6 +5,95 @@ import pymel.core as pm
 from rigBuilds.rig import ControlCurves
 imp.reload(ControlCurves)
 
+class baseRig2():
+    def __init__(self,
+                 name='Base',
+                 size=1,
+                 addRootJoint = True,
+
+                 ):
+        """
+        QUICK WAY TO GET RIG BASE
+        """
+        self.name = name
+        self.size = size
+        self.addRootJoint = addRootJoint
+        self.groups = ['GEO', 'RIG', 'SKELE']
+
+        # TODO
+        # self.colour = colour
+        # self.upaxis = upaxis
+
+        self.fullName = 'C_' + name + '_GRP'
+
+        # Exacute process
+        self.__createStructure()
+
+    def __createStructure(self):
+        # create the main group
+        mainGrp = cmds.group(em=True, n=self.name)
+        cmds.select(clear=1)
+        # create the child groups
+        for group in self.groups:
+            grp = cmds.group(em=True, n=group, p=mainGrp)
+            cmds.select(clear=1)
+        main = cmds.group(em=True, n='C_main_GRP', p='RIG')
+        cmds.select(clear=1)
+        globalControl = ControlCurves.controlCurves(side='C',
+                                                    name='global',
+                                                    nodeList=[main],
+                                                    shape='global',
+                                                    rotate=[0, 0, 0],
+                                                    scale=self.size,
+                                                    lockHideAttrs=['v'],
+                                                    parentControlsTo=main,
+                                                    parentOrConst='parent',
+                                                    adjGrpNumber=1,
+                                                    tag=True
+                                                    )
+        
+        godControl = ControlCurves.controlCurves(name='god',
+                                                  side='C',
+                                                  shape='god',
+                                                  nodeList=[globalControl],
+                                                  rotate=[0, 0, 0],
+                                                  scale= self.size / 2.2,
+                                                  lockHideAttrs=['v'],
+                                                  parentControlsTo=globalControl,
+                                                  parentOrConst='parent',
+                                                  adjGrpNumber=1,
+                                                  tag=True
+                                                  )
+
+        main = cmds.group(em=True, n='C_local_GRP', p=godControl)
+
+
+        cmds.addAttr(globalControl.getControlName(),
+                     shortName='gs', longName='globalScale',
+                     defaultValue=1.0, minValue=0, k=1)
+
+        for axis in 'xyz':
+            cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
+                             f'{globalControl.getControlName()}.s{axis}')
+
+        if self.addRootJoint:
+            cmds.select(clear=1)
+            jnt = cmds.joint(n=f'root_JNT')
+            cmds.parent(jnt, self.groups[-1])
+
+            # connect to global scale
+            for axis in 'xyz':
+                cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
+                                 f'{jnt}.s{axis}')
+            # for rottran in 'tr':
+            #     for axis in 'xyz':
+            #         cmds.connectAttr(f'{globalControl.getControlName()}.{rottran}{axis}',
+            #                          f'{jnt}.{rottran}{axis}')
+            cmds.parentConstraint(godControl.getControlName(),
+                                  jnt
+                                  )
+        # clean up
+
 # class baseRig():
 #     def __init__(self,
 #                  name='Base',
@@ -81,93 +170,3 @@ imp.reload(ControlCurves)
 #         # Step 1
 #         self.__createStructure()
 #         # self.__createGrpsandSubGrps()
-
-class baseRig2():
-    def __init__(self,
-                 name='Base',
-                 size=1,
-                 addRootJoint = True,
-
-                 ):
-        """
-        QUICK WAY TO GET RIG BASE
-        """
-        self.name = name
-        self.size = size
-        self.addRootJoint = addRootJoint
-        self.groups = ['GEO', 'RIG', 'SKELE']
-
-        # TODO
-        # self.colour = colour
-        # self.upaxis = upaxis
-
-        self.fullName = 'C_' + name + '_GRP'
-
-        # Exacute process
-        self.__createStructure()
-
-    def __createStructure(self):
-        # create the main group
-        mainGrp = cmds.group(em=True, n=self.name)
-        cmds.select(clear=1)
-        # create the child groups
-        for group in self.groups:
-            grp = cmds.group(em=True, n=group, p=mainGrp)
-            cmds.select(clear=1)
-        main = cmds.group(em=True, n='C_main_GRP', p='RIG')
-        cmds.select(clear=1)
-        globalControl = ControlCurves.controlCurves(name='global',
-                                                    side='C',
-                                                    shape='global',
-                                                    num=0,
-                                                    rotate=[0, 0, 0],
-                                                    scale=self.size,
-                                                    hook = main,
-                                                    # parent = ,
-                                                    lockHideAttrs=['v'],
-                                                    parentOrConst='parent',
-                                                    adjGrpNumber=1,
-                                                    tag=True
-                                                    )
-
-        godControl = ControlCurves.controlCurves(name='god',
-                                                  side='C',
-                                                  shape='god',
-                                                  num=0,
-                                                  rotate=[0, 0, 0],
-                                                  scale= self.size / 2.2,
-                                                  hook = globalControl,
-                                                 lockHideAttrs=['v'],
-                                                  parentOrConst='parent',
-                                                  adjGrpNumber=1,
-                                                  tag=True
-                                                  )
-
-        main = cmds.group(em=True, n='C_local_GRP', p=godControl)
-
-
-        cmds.addAttr(globalControl.getControlName(),
-                     shortName='gs', longName='globalScale',
-                     defaultValue=1.0, minValue=0, k=1)
-
-        for axis in 'xyz':
-            cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
-                             f'{globalControl.getControlName()}.s{axis}')
-
-        if self.addRootJoint:
-            cmds.select(clear=1)
-            jnt = cmds.joint(n=f'root_JNT')
-            cmds.parent(jnt, self.groups[-1])
-
-            # connect to global scale
-            for axis in 'xyz':
-                cmds.connectAttr(f'{globalControl.getControlName()}.globalScale',
-                                 f'{jnt}.s{axis}')
-            # for rottran in 'tr':
-            #     for axis in 'xyz':
-            #         cmds.connectAttr(f'{globalControl.getControlName()}.{rottran}{axis}',
-            #                          f'{jnt}.{rottran}{axis}')
-            cmds.parentConstraint(godControl.getControlName(),
-                                  jnt
-                                  )
-        # clean up

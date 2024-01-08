@@ -70,7 +70,6 @@ def selectTaggedJoints():
     ListofObject = attribute.selectTags(tagName=tagName)
     return ListofObject
 
-
 def createJointChain(side='C',
                      name='name',
                      guideList=['C_spine%s_GDE' % i for i in range(5)],
@@ -178,10 +177,10 @@ def createJointsOnCurve(side='C',
     :param numJoints:   if str() it will create joints on every CV
                         or int() it will create joints Evenly curve
     :param parent:
-    :param tag:         tag joints
+    :param tag:                 tag joints
     :param primaryAxis:
     :param secondaryAxisOrient:
-    :return:
+    :return:                    list of joints
     """
 
     # checks
