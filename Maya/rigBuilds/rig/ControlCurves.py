@@ -540,7 +540,7 @@ class controlCurves():
                         cmds.parent(self.parentControlsTo, mainGrpName)
 
                 elif self.parentOrConst == 'const':
-                    cmds.parentConstraint(self.controlNames, nodies, mo=False,
+                    cmds.parentConstraint(self.controlNames, nodies, mo=1,
                                           n=f'{self.fullName}_Const')
                     # End of  parent Constraints
 
@@ -597,7 +597,7 @@ class controlCurves():
 
     def getInstancesList(self):
         return self.ControlList
-    
+# End of ControlCurve Class
 
 def scaleCurve(controlNames='C_global0_CNT', scale=1):
     """
@@ -610,3 +610,156 @@ def scaleCurve(controlNames='C_global0_CNT', scale=1):
         spans = pm.getAttr(i + '.spans')
         allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
         cmds.scale(scale, scale, scale, allSpans, r=True)
+
+def getPositionOfEachPointsOnCurve( node='cmds.ls(sl=True)[0]'):
+                                    spans = cmds.getAttr(node + '.spans')
+                                    nbr = cmds.ls(node+'.cv[0:%s]' %spans, fl=True)
+                                    for i in nbr:
+                                        foo = cmds.pointPosition(i)
+                                        print(str(tuple(foo)) + ',')
+
+def mergingCurves(name='name', curveList = ['curve1', 'curve2']):
+    "this tool is to create 1 core group for all shapes in the curveList"
+    controlNames = cmds.group(em=True, n=name)
+    for crvName in curveList:
+        shapes = cmds.listRelatives(crvName, shapes=True, fullPath=True) or []
+        for shape in shapes:
+            cmds.parent(shape, controlNames, shape=True, relative=True)
+    for crvName in curveList:
+        cmds.delete(crvName)
+        
+def IKFKswitchPannel(side='C',
+                     name='armSwitch',
+                     parentTo='L_wrist0_CNT',
+                     size= 3, 
+                     position=[0,0,0], 
+                     rotation=[0,0,0]):
+    
+    mainName = f"{side}_{name}"
+    color = Checker.checkingSides(side=side, color=None)
+    print(color)
+    
+    I0 = cmds.curve(name=mainName+'I0',
+                    r=False, d=1,  
+                    p=[
+                        (-0.7178935716158382, 0.0, -0.7094665696128482),
+                        (-0.8514362164259791, 0.0, -0.7094665696128482),
+                        (-0.8514362164259791, 0.0, -0.27824819347993723),
+                        (-0.7178935716158382, 0.0, -0.27824819347993723),
+                        (-0.7178935716158382, 0.0, -0.7094665696128482),
+                    ])
+    cmds.rename(cmds.listRelatives(I0, shapes=True),
+                mainName+'I0' + 'Shape')
+    
+    K0 = cmds.curve(name=mainName+'K0',
+                    r=False, d=1,  
+                    p=[
+                    (-0.48795299238532214, 0.0, -0.7094665696128482),
+                    (-0.6212064893018723, 0.0, -0.7094665696128482),
+                    (-0.6212064893018723, 0.0, -0.27824819347993723),
+                    (-0.48795299238532214, 0.0, -0.27824819347993723),
+                    (-0.48795299238532214, 0.0, -0.3834714671824052),
+                    (-0.41910938603086856, 0.0, -0.45558617299659965),
+                    (-0.32819341458509144, 0.0, -0.27824819347993723),
+                    (-0.1641024102494394, 0.0, -0.27824819347993723),
+                    (-0.32851869077691476, 0.0, -0.5467009715903858),
+                    (-0.1711626573735675, 0.0, -0.7094665696128482),
+                    (-0.3483802227303133, 0.0, -0.7094665696128482),
+                    (-0.48795299238532214, 0.0, -0.5465081995775626),
+                    (-0.48795299238532214, 0.0, -0.7094665696128482),
+                    ])
+    cmds.rename(cmds.listRelatives(K0, shapes=True),
+                mainName+'K0' + 'Shape')
+    
+    F0 = cmds.curve(name=mainName+'F0',
+                    r=False, d=1,  
+                    p=[
+                    (0.40703811076331764, 0.0, -0.7094665696128482),
+                    (0.07759120662810592, 0.0, -0.7094665696128482),
+                    (0.07759120662810592, 0.0, -0.27824819347993723),
+                    (0.21142897346187017, 0.0, -0.27824819347993723),
+                    (0.21142897346187017, 0.0, -0.4544415904361674),
+                    (0.37850793387063764, 0.0, -0.4544415904361674),
+                    (0.37850793387063764, 0.0, -0.5415081565093782),
+                    (0.21142897346187017, 0.0, -0.5415081565093782),
+                    (0.21142897346187017, 0.0, -0.6168096556703412),
+                    (0.40703811076331764, 0.0, -0.6168096556703412),
+                    (0.40703811076331764, 0.0, -0.7094665696128482),
+                    ])
+    cmds.rename(cmds.listRelatives(F0, shapes=True),
+                mainName+'F0' + 'Shape')
+    
+    K1 = cmds.curve(name=mainName+'K1',
+                    r=False, d=1,  
+                    p=[
+                        (0.6144604725404643, 0.0, -0.7094665696128482),
+                        (0.48120699587520255, 0.0, -0.7094665696128482),
+                        (0.48120699587520255, 0.0, -0.27824819347993723),
+                        (0.6144604725404643, 0.0, -0.27824819347993723),
+                        (0.6144604725404643, 0.0, -0.3834714671824052),
+                        (0.6833041599000709, 0.0, -0.45558617299659965),
+                        (0.7742201313458481, 0.0, -0.27824819347993723),
+                        (0.9383111356815002, 0.0, -0.27824819347993723),
+                        (0.7738948146514482, 0.0, -0.5467009715903858),
+                        (0.9312508885573718, 0.0, -0.7094665696128482),
+                        (0.7540333232006262, 0.0, -0.7094665696128482),
+                        (0.6144604725404643, 0.0, -0.5465081995775626),
+                        (0.6144604725404643, 0.0, -0.7094665696128482),
+                    ])
+    cmds.rename(cmds.listRelatives(K1, shapes=True),
+                mainName+'K1' + 'Shape')
+    
+    boarder = cmds.curve(name=mainName+'boarder0',
+                         r=False, d=1,  
+                         p=[
+                            (0.9945704879795692, 0.0, -0.9945704879795692),
+                            (0.9945704879795692, 0.0, -0.9945704879795692),
+                            (0.9945704879795692, 0.0, -0.9945704879795692),
+                            (-0.9945704879795692, 0.0, -0.9945704879795692),
+                            (-0.9945704879795692, 0.0, 0.9945704879795692),
+                            (0.9945704879795692, 0.0, 0.9945704879795692),
+                            (0.9945704879795692, 0.0, -0.9945704879795692),
+                         ])
+    cmds.rename(cmds.listRelatives(boarder, shapes=True),
+                mainName + 'boarder0' + 'Shape')
+    cmds.setAttr(mainName + 'boarder0' + 'Shape.overrideEnabled', 1)
+    cmds.setAttr(mainName + 'boarder0' +'.overrideColor', 22)
+    
+    bar = cmds.curve(name=mainName+'bar0',
+                     r=False, d=1,  
+                     p=[
+                        (-0.8544918349773636, 0.0, 0.331552100691654),
+                        (0.8544918349773636, 0.0, 0.331552100691654),
+                        (0.8544918349773636, 0.0, 0.663104201383308),
+                        (-0.8544918349773636, 0.0, 0.663104201383308),
+                        (-0.8544918349773636, 0.0, 0.331552100691654),
+                      ])
+    cmds.rename(cmds.listRelatives(bar, shapes=True),
+                mainName+'bar0' + 'Shape')
+    cmds.setAttr(mainName + 'bar0' + 'Shape.overrideEnabled', 1)
+    cmds.setAttr(mainName + 'bar0' + '.overrideColor', color)
+    
+    switchBar = cmds.curve(name=mainName+'switchBar0',
+                            r=False, d=1,  
+                            p=[
+                                (-0.7284343639687741, 0.0, 0.05516633253169462),
+                                (-0.7284343639687741, 0.0, 0.9394899695432671),
+                                (-0.18303394329930797, 0.0, 0.9394899695432671),
+                                (-0.18303394329930797, 0.0, 0.05516633253169462),
+                                (-0.7284343639687741, 0.0, 0.05516633253169462),
+                            ])
+    cmds.rename(cmds.listRelatives(switchBar, shapes=True),
+                mainName+'switchBar0' + 'Shape')
+    cmds.setAttr(mainName + 'switchBar0' + 'Shape.overrideEnabled', 1)
+    cmds.setAttr(mainName + 'switchBar0' + '.overrideColor', 14)
+    
+    mergingCurves(name=mainName+'_CRV', curveList = [I0, K0, F0, K1, boarder, bar])
+    
+    print(boarder)
+    
+    cmds.setAttr(boarder + 'Shape.overrideEnabled', 1)
+    cmds.setAttr(boarder +'Shape.overrideColor', color)
+    # cmds.setAttr(mainName + 'bar0' + 'Shape.overrideEnabled', 1)
+    # cmds.setAttr(mainName + 'bar0' + '.overrideColor', color)
+    # cmds.setAttr(mainName + 'switchBar0' + 'Shape.overrideEnabled', 1)
+    # cmds.setAttr(mainName + 'switchBar0' + '.overrideColor', 14)
