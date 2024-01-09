@@ -78,5 +78,7 @@ def checkingSides(side='C', color=None):
     elif side == 'R' and color is None:
         color = 6
         # Add the specific action for 'R' side here
-
+    else:
+        color = color
+        
     return color
