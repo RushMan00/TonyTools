@@ -19,6 +19,7 @@ class limbs():
                  IKcontrolColor=22,
                  FKcontrolSize=8,
                  IKcontrolSize=8,
+                 parentControlTo=None,
                  parentJointsTo='C_chest_JNT',
                  primaryAxis='xyz',
                  secondaryAxisOrient='yup',
@@ -42,7 +43,7 @@ class limbs():
 
         # Vars
         self.fullName = f'{side}_{name}'
-        self.curveName = f'{side}_{name}_CRV'
+        self.ikName = f'{side}_{name}effector_IK'
         self.iKhandle = None
         self.effector = None
         self.curveLength = int()
@@ -136,7 +137,34 @@ class limbs():
                                     parentControlsTo='C_cog0_CNT',
                                     tag=True,
                                     )
+        # creating IK Handle in IK Joint chain
+        ikHandle = cmds.ikHandle(name=self.name + 'iKHandle',
+                                 startJoint=IKLimbJoints[0],
+                                 endEffector=IKLimbJoints[-1],
+                                #  solver=f"ik{self.name}Solver",
+                                )
 
+        cmds.rename(ikHandle[1], self.ikName)
+        cmds.parent(ikHandle[0], self.mainRigGroup)
+        # cmds.parent(ikHandle[1], self.mainRigGroup)
+        
+        # 
+        IKcontrolName = ControlCurves.controlCurves(side=self.side,
+                                                    name=self.name + 'Ik',
+                                                    nodeList=[self.ikName],
+                                                    shape='arrowoutward',
+                                                    scale=self.IKcontrolSize,
+                                                    color=self.IKcontrolColor,
+                                                    parentControlsTo=None,
+                                                    parentOrConst='parent',
+                                                    controlChain = 1,
+                                                    adjGrpNumber=2,
+                                                    rotate=[0, 90, 0],
+                                                    lockHideAttrs = ['sx','sy','sz','v'],
+                                                    tag = True,
+                                                    )
+
+        
     def __cleanUp(self):
         # # remove locatorGuides Group
         # par = cmds.listRelatives(self.guideList[0], parent=True)
