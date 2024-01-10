@@ -1,20 +1,62 @@
 import maya.OpenMaya as om
 import maya.cmds as cmds
 import pymel.core as pm
+
 def addAttrTitleSperator(nodeName='C_global0_CNT', attrName='Title'):
     # Adding an enum attribute to the specified node
     cmds.addAttr(nodeName, longName=attrName, attributeType='enum', enumName='Setup', keyable=True)
     cmds.setAttr(f'{nodeName}.{attrName}', e=1, lock=0, channelBox=0)
     return f'{nodeName}.{attrName}'
 
-def addAttr(nodeName='C_global0_CNT', attrName='Title',
-            attributeType='float', min=0.0, max=1.0,
-            defaultValue=0.0):
-    # Adding an enum attribute to the specified node
-    cmds.addAttr(nodeName, longName=attrName, attributeType=attributeType,
-                 min=min, max=max, defaultValue=defaultValue, keyable=True)
-    cmds.setAttr(f'{nodeName}.{attrName}', e=1, lock=0, channelBox=0)
+
+def addAttr(nodeName='C_global0_CNT', attrName='Title', attributeType='float',
+            min=None, max=None, defaultValue=None, enumName=None):
+    """
+    FUNCTION:      addAttr
+    DESCRIPTION:   Adds a new attribute of various types to a specified Maya node.
+    USAGE:         addAttr(nodeName='C_global0_CNT', attrName='Title', attributeType='float',
+                           min=None, max=None, defaultValue=None, enumName=None)
+    RETURN:        str: The full path of the newly created attribute.
+    REQUIRES:      None
+    RAISES:        ValueError: If the node does not exist or if an unsupported attribute type is specified.
+    Version        1.0.0
+    
+    """
+
+    # Check if the specified node exists in the scene
+    if not cmds.objExists(nodeName):
+        raise ValueError(f"Node '{nodeName}' does not exist.")
+
+    # Add an attribute based on its type
+    if attributeType == 'enum':
+        if not enumName:
+            raise ValueError("enumName parameter must be provided for enum attributes.")
+        cmds.addAttr(nodeName, longName=attrName, attributeType='enum', enumName=enumName, keyable=True)
+    elif attributeType in ['float', 'double', 'int', 'long']:
+        addAttrArgs = {
+            'longName': attrName, 
+            'attributeType': attributeType, 
+            'keyable': True
+        }
+        if min is not None:
+            addAttrArgs['min'] = min
+        if max is not None:
+            addAttrArgs['max'] = max
+        if defaultValue is not None:
+            addAttrArgs['defaultValue'] = defaultValue
+        cmds.addAttr(nodeName, **addAttrArgs)
+    else:
+        # This can be extended to handle other attribute types
+        raise ValueError(f"Unsupported attribute type: {attributeType}")
+
+    # Unlock the attribute and make it visible in the channel box
+    cmds.setAttr(f'{nodeName}.{attrName}', e=True, lock=False, 
+                #  channelBox=False
+                 )
+
+    # Return the full path of the new attribute for further use
     return f'{nodeName}.{attrName}'
+
 
 def createTags(nodeName='C_joint0_JNT', attrName= 'myTag', attrValue='myTagValue'):
     """
