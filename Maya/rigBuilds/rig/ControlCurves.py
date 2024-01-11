@@ -18,6 +18,7 @@ class controlCurves():
                  parentOrConst='parent',
                  controlChain = False,
                  adjGrpNumber=2,
+                 translate=[0, 0, 0],
                  rotate=[0, 0, 0],
                  lockHideAttrs = ['sx','sy','sz','v'],
                  tag = True,
@@ -53,6 +54,7 @@ class controlCurves():
         self.parentOrConst = parentOrConst
         self.parentControlsTo = parentControlsTo
         self.adjGrpNumber = adjGrpNumber
+        self.translate = translate
         self.rotate = rotate
         self.lockHideAttrs = lockHideAttrs
         self.tag = tag
@@ -103,6 +105,7 @@ class controlCurves():
         self.controlAndGrpLstNames = []
         self.crvShapeNames = []
         self.adjGrps = []
+        self.skipColor = 0
         # self.theList
         # self.trans = pm.xform(self.joints, q=1, ws=1, rp=1)
         # self.rot = pm.xform(self.joints, q=1, ws=1, ro=1)
@@ -144,6 +147,8 @@ class controlCurves():
             self.pinsquareControl()
         elif self.shape == 'arrow':  #
             self.arrowControl()
+        elif self.shape == 'IKFK':  #
+            self.IKFKswitchPannel()
         else:
             cmds.warning(" wrong shape string. please chose one of the following in shapes: /n "
                             "circle | acme | pyramid | cube | god | square | arrowoutward | pinsquare | arrow")
@@ -158,6 +163,7 @@ class controlCurves():
                 cmds.parent(shape, self.controlNames, shape=True, relative=True)
         for crvName in curveList:
             cmds.delete(crvName)
+        return self.controlNames
 
     # ================================ THE CONTROL LIBRARY ================================
     # --- ACME CONTROL
@@ -191,7 +197,7 @@ class controlCurves():
         cmds.delete(starcurve, circleCurve)
         
         crvNames=list()
-        crvNames.append(tricurve)
+        crvNames.append(starcurve)
         crvNames.append(circleCurve[0])
 
         self.controlNames = cmds.group(em=True, n=self.fullName + "_" + self.CSN)
@@ -508,6 +514,143 @@ class controlCurves():
                                            (-0.02792703607711131, 0.0, -1.009885145746707),
                                        ])
     # End of gearControl
+    
+    def IKFKswitchPannel(self):
+        I0 = cmds.curve(name=self.fullName+'I0_' + self.CSN,
+                        r=False, d=1,  
+                        p=[
+                            (-0.703011848909553, 0.0, -0.21395467044878191),
+                            (-0.8365544937196939, 0.0, -0.21395467044878191),
+                            (-0.8365544937196939, 0.0, 0.217263705684129),
+                            (-0.703011848909553, 0.0, 0.217263705684129),
+                            (-0.703011848909553, 0.0, -0.21395467044878191),
+                        ])
+        cmds.rename(cmds.listRelatives(I0, shapes=True),
+                    I0 + 'Shape')
+        
+        K0 = cmds.curve(name=self.fullName+'K0_' + self.CSN,
+                        r=False, d=1,  
+                        p=[
+                        (-0.473071269679037, 0.0, -0.21395467044878191),
+                        (-0.6063247665955872, 0.0, -0.21395467044878191),
+                        (-0.6063247665955872, 0.0, 0.217263705684129),
+                        (-0.473071269679037, 0.0, 0.217263705684129),
+                        (-0.473071269679037, 0.0, 0.11204043198166103),
+                        (-0.40422766332458343, 0.0, 0.03992572616746659),
+                        (-0.3133116918788063, 0.0, 0.217263705684129),
+                        (-0.14922068754315426, 0.0, 0.217263705684129),
+                        (-0.31363696807062963, 0.0, -0.05118907242631954),
+                        (-0.15628093466728238, 0.0, -0.21395467044878191),
+                        (-0.3334985000240282, 0.0, -0.21395467044878191),
+                        (-0.473071269679037, 0.0, -0.05099630041349634),
+                        (-0.473071269679037, 0.0, -0.21395467044878191),
+
+                        ])
+        cmds.rename(cmds.listRelatives(K0, shapes=True),
+                    K0 + 'Shape')
+        
+        F0 = cmds.curve(name=self.fullName+'F0_'+ self.CSN,
+                        r=False, d=1,  
+                        p=[
+                        (0.39311178984504563, 0.0, -0.21395467044878191),
+                        (0.06366488570983392, 0.0, -0.21395467044878191),
+                        (0.06366488570983392, 0.0, 0.217263705684129),
+                        (0.19750265254359817, 0.0, 0.217263705684129),
+                        (0.19750265254359817, 0.0, 0.04107030872789885),
+                        (0.36458161295236563, 0.0, 0.04107030872789885),
+                        (0.36458161295236563, 0.0, -0.045996257345311986),
+                        (0.19750265254359817, 0.0, -0.045996257345311986),
+                        (0.19750265254359817, 0.0, -0.12129775650627495),
+                        (0.39311178984504563, 0.0, -0.12129775650627495),
+                        (0.39311178984504563, 0.0, -0.21395467044878191),
+                        ])
+        cmds.rename(cmds.listRelatives(F0, shapes=True),
+                    F0 + 'Shape')
+        
+        K1 = cmds.curve(name=self.fullName+'K1_'+ self.CSN,
+                        r=False, d=1,  
+                        p=[
+                            (0.6005341516221923, 0.0, -0.21395467044878191),
+                            (0.46728067495693054, 0.0, -0.21395467044878191),
+                            (0.46728067495693054, 0.0, 0.217263705684129),
+                            (0.6005341516221923, 0.0, 0.217263705684129),
+                            (0.6005341516221923, 0.0, 0.11204043198166103),
+                            (0.6693778389817988, 0.0, 0.03992572616746659),
+                            (0.760293810427576, 0.0, 0.217263705684129),
+                            (0.9243848147632281, 0.0, 0.217263705684129),
+                            (0.7599684937331761, 0.0, -0.05118907242631954),
+                            (0.9173245676390998, 0.0, -0.21395467044878191),
+                            (0.7401070022823542, 0.0, -0.21395467044878191),
+                            (0.6005341516221923, 0.0, -0.05099630041349634),
+                            (0.6005341516221923, 0.0, -0.21395467044878191),
+
+                        ])
+        cmds.rename(cmds.listRelatives(K1, shapes=True),
+                    K1 + 'Shape')
+        
+        boarder = cmds.curve(name=self.fullName+'boarder0_'+ self.CSN,
+                            r=False, d=1,  
+                            p=[
+                                (0.9945704879795692, 0.0, -0.49062999507472327),
+                                (0.9945704879795692, 0.0, -0.49062999507472327),
+                                (0.9945704879795692, 0.0, -0.49062999507472327),
+                                (-0.9945704879795692, 0.0, -0.49062999507472327),
+                                (-0.9945704879795692, 0.0, 0.5041904905847693),
+                                (0.9945704879795692, 0.0, 0.5041904905847693),
+                                (0.9945704879795692, 0.0, -0.49062999507472327),
+
+                            ])
+        cmds.rename(cmds.listRelatives(boarder, shapes=True),
+                    boarder + 'Shape')
+        
+        self.controlNames = self.mergingCurves(name=self.fullName+'_'+self.CSN, curveList = [I0, K0, F0, K1, boarder])
+        
+        cmds.setAttr(boarder + 'Shape.overrideEnabled', 1)
+        cmds.setAttr(boarder +'Shape.overrideColor', self.color)
+        
+        IKset = []
+        FKset = []
+        
+        IKset.append(I0)
+        IKset.append(K0)
+        
+        FKset.append(F0)
+        FKset.append(K1)
+        
+        for ikLetters in IKset:
+            cmds.setAttr(ikLetters + 'Shape.overrideEnabled', 1)
+            cmds.setAttr(ikLetters  + 'Shape.overrideColor', 14)
+            
+        for fkLetters in FKset:
+            cmds.setAttr(fkLetters + 'Shape.overrideEnabled', 1)
+            cmds.setAttr(fkLetters  + 'Shape.overrideColor', 2)
+        
+        # setting up attrs
+        # attribute.addAttrTitleSperator()
+        print(self.controlNames)
+        attrSwitchName = attribute.addAttr(nodeName=self.controlNames, attrName='IKFKswitch', attributeType='float',
+                                            min=0, max=1, defaultValue=0, enumName=None)
+
+        # create FK condition nodes
+        FKcondition = cmds.createNode('condition', n=f'{self.fullName}FK_condition')
+        cmds.setAttr(FKcondition  + '.secondTerm', 1)
+        cmds.setAttr(FKcondition  + '.colorIfTrueR', 14)
+        cmds.setAttr(FKcondition  + '.colorIfFalseR', 2)
+        cmds.connectAttr(attrSwitchName, FKcondition+'.firstTerm')
+        for fkLetters in FKset:
+            cmds.connectAttr(FKcondition+'.outColorR', fkLetters+'Shape.overrideColor')
+            
+        # create IK condition nodes
+        IKcondition = cmds.createNode('condition', n=f'{self.fullName}IK_condition')
+        cmds.setAttr(IKcondition  + '.secondTerm', 0)
+        cmds.setAttr(IKcondition  + '.colorIfTrueR', 14)
+        cmds.setAttr(IKcondition  + '.colorIfFalseR', 2)
+        cmds.connectAttr(attrSwitchName, IKcondition+'.firstTerm')
+        for ikLetters in IKset:
+            cmds.connectAttr(IKcondition+'.outColorR', ikLetters+'Shape.overrideColor')
+            
+        self.skipColor = 1
+
 
     def __creatingSetup(self):
         # making controls for each iteration
@@ -529,8 +672,7 @@ class controlCurves():
                     grp = cmds.group(self.controlNames, n=self.fullName + "_" + 'SubAdj' + str(i) + '_GRP')
                     self.adjGrpList.append(grp)
                 self.ControlList.append(self.controlNames)
-
-
+            
             matrix = cmds.xform(nodies, query=True, matrix=True, worldSpace=True)
             cmds.xform(mainGrpName, matrix=matrix, worldSpace=True)
             # END OF adj/buffer groups
@@ -546,20 +688,18 @@ class controlCurves():
 
             # set colour on locator shapes
             allShapes = attribute.getShapeNodes(nodeName=self.controlNames)
-            for ctlName in allShapes:
-                cmds.setAttr(ctlName + '.overrideEnabled', 1)
-                cmds.setAttr(ctlName + '.overrideColor', self.color)
+            if not self.skipColor:
+                for ctlName in allShapes:
+                    cmds.setAttr(ctlName + '.overrideEnabled', 1)
+                    cmds.setAttr(ctlName + '.overrideColor', self.color)
 
             # --- move Shape Controls
             for ctlName in allShapes:
                 # shapeName = ctlName + 'Shape'
                 spans = cmds.getAttr(ctlName + '.spans')
-                allSpans = cmds.ls(ctlName + '.cv[0:%s]' % spans, fl=True)
-
-                # scaling the shape
-                cmds.scale(self.scale, self.scale, self.scale, allSpans, r=True)
-                # rotating the shape
-                cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], ctlName + '.cv[0:%s]' % len(allSpans))
+                cmds.scale(self.scale, self.scale, self.scale, ctlName + '.cv[0:*]', r=True)
+                cmds.rotate(self.rotate[0], self.rotate[1], self.rotate[2], ctlName + '.cv[0:*]')
+                cmds.move(self.translate[0], self.translate[1], self.translate[2], ctlName + '.cv[0:*]', r =1)
 
             # --- self.tag
             if self.tag:
@@ -611,164 +751,9 @@ def scaleCurve(controlNames='C_global0_CNT', scale=1):
         allSpans = cmds.ls(i + '.cv[0:%s]' % spans, fl=True)
         cmds.scale(scale, scale, scale, allSpans, r=True)
 
-def getPositionOfEachPointsOnCurve( node='cmds.ls(sl=True)[0]'):
+def getPositionOfEachPointsOnCurve( node=   'cmds.ls(sl=True)[0]'   ):
                                     spans = cmds.getAttr(node + '.spans')
                                     nbr = cmds.ls(node+'.cv[0:%s]' %spans, fl=True)
                                     for i in nbr:
                                         foo = cmds.pointPosition(i)
                                         print(str(tuple(foo)) + ',')
-
-def mergingCurves(name='name', curveList = ['curve1', 'curve2']):
-    "this tool is to create 1 core group for all shapes in the curveList"
-    controlNames = cmds.group(em=True, n=name)
-    for crvName in curveList:
-        shapes = cmds.listRelatives(crvName, shapes=True, fullPath=True) or []
-        for shape in shapes:
-            cmds.parent(shape, controlNames, shape=True, relative=True)
-    for crvName in curveList:
-        cmds.delete(crvName)
-    return name
-        
-def IKFKswitchPannel(side='C',
-                     name='armSwitch',
-                     parentTo='L_wrist0_CNT',
-                     size= 3, 
-                     position=[0,0,0], 
-                     rotation=[0,0,0]):
-    
-    #set up
-    mainName = f"{side}_{name}"
-    color = Checker.checkingSides(side=side, color=None)
-    
-    # creating 
-    I0 = cmds.curve(name=mainName+'I0',
-                    r=False, d=1,  
-                    p=[
-                        (-0.703011848909553, 0.0, -0.21395467044878191),
-                        (-0.8365544937196939, 0.0, -0.21395467044878191),
-                        (-0.8365544937196939, 0.0, 0.217263705684129),
-                        (-0.703011848909553, 0.0, 0.217263705684129),
-                        (-0.703011848909553, 0.0, -0.21395467044878191),
-                    ])
-    cmds.rename(cmds.listRelatives(I0, shapes=True),
-                I0 + 'Shape')
-    
-    K0 = cmds.curve(name=mainName+'K0',
-                    r=False, d=1,  
-                    p=[
-                    (-0.473071269679037, 0.0, -0.21395467044878191),
-                    (-0.6063247665955872, 0.0, -0.21395467044878191),
-                    (-0.6063247665955872, 0.0, 0.217263705684129),
-                    (-0.473071269679037, 0.0, 0.217263705684129),
-                    (-0.473071269679037, 0.0, 0.11204043198166103),
-                    (-0.40422766332458343, 0.0, 0.03992572616746659),
-                    (-0.3133116918788063, 0.0, 0.217263705684129),
-                    (-0.14922068754315426, 0.0, 0.217263705684129),
-                    (-0.31363696807062963, 0.0, -0.05118907242631954),
-                    (-0.15628093466728238, 0.0, -0.21395467044878191),
-                    (-0.3334985000240282, 0.0, -0.21395467044878191),
-                    (-0.473071269679037, 0.0, -0.05099630041349634),
-                    (-0.473071269679037, 0.0, -0.21395467044878191),
-
-                    ])
-    cmds.rename(cmds.listRelatives(K0, shapes=True),
-                K0 + 'Shape')
-    
-    F0 = cmds.curve(name=mainName+'F0',
-                    r=False, d=1,  
-                    p=[
-                    (0.39311178984504563, 0.0, -0.21395467044878191),
-                    (0.06366488570983392, 0.0, -0.21395467044878191),
-                    (0.06366488570983392, 0.0, 0.217263705684129),
-                    (0.19750265254359817, 0.0, 0.217263705684129),
-                    (0.19750265254359817, 0.0, 0.04107030872789885),
-                    (0.36458161295236563, 0.0, 0.04107030872789885),
-                    (0.36458161295236563, 0.0, -0.045996257345311986),
-                    (0.19750265254359817, 0.0, -0.045996257345311986),
-                    (0.19750265254359817, 0.0, -0.12129775650627495),
-                    (0.39311178984504563, 0.0, -0.12129775650627495),
-                    (0.39311178984504563, 0.0, -0.21395467044878191),
-                    ])
-    cmds.rename(cmds.listRelatives(F0, shapes=True),
-                F0 + 'Shape')
-    
-    K1 = cmds.curve(name=mainName+'K1',
-                    r=False, d=1,  
-                    p=[
-                        (0.6005341516221923, 0.0, -0.21395467044878191),
-                        (0.46728067495693054, 0.0, -0.21395467044878191),
-                        (0.46728067495693054, 0.0, 0.217263705684129),
-                        (0.6005341516221923, 0.0, 0.217263705684129),
-                        (0.6005341516221923, 0.0, 0.11204043198166103),
-                        (0.6693778389817988, 0.0, 0.03992572616746659),
-                        (0.760293810427576, 0.0, 0.217263705684129),
-                        (0.9243848147632281, 0.0, 0.217263705684129),
-                        (0.7599684937331761, 0.0, -0.05118907242631954),
-                        (0.9173245676390998, 0.0, -0.21395467044878191),
-                        (0.7401070022823542, 0.0, -0.21395467044878191),
-                        (0.6005341516221923, 0.0, -0.05099630041349634),
-                        (0.6005341516221923, 0.0, -0.21395467044878191),
-
-                    ])
-    cmds.rename(cmds.listRelatives(K1, shapes=True),
-                K1 + 'Shape')
-    
-    boarder = cmds.curve(name=mainName+'boarder0',
-                         r=False, d=1,  
-                         p=[
-                            (0.9945704879795692, 0.0, -0.49062999507472327),
-                            (0.9945704879795692, 0.0, -0.49062999507472327),
-                            (0.9945704879795692, 0.0, -0.49062999507472327),
-                            (-0.9945704879795692, 0.0, -0.49062999507472327),
-                            (-0.9945704879795692, 0.0, 0.5041904905847693),
-                            (0.9945704879795692, 0.0, 0.5041904905847693),
-                            (0.9945704879795692, 0.0, -0.49062999507472327),
-
-                         ])
-    cmds.rename(cmds.listRelatives(boarder, shapes=True),
-                boarder + 'Shape')
-    
-    mainCrv = mergingCurves(name=mainName+'_CRV', curveList = [I0, K0, F0, K1, boarder])
-    
-    cmds.setAttr(boarder + 'Shape.overrideEnabled', 1)
-    cmds.setAttr(boarder +'Shape.overrideColor', color)
-    
-    IKset = []
-    FKset = []
-    
-    IKset.append(I0)
-    IKset.append(K0)
-    
-    FKset.append(F0)
-    FKset.append(K1)
-    
-    for ikLetters in IKset:
-        cmds.setAttr(ikLetters + 'Shape.overrideEnabled', 1)
-        cmds.setAttr(ikLetters  + 'Shape.overrideColor', 14)
-        
-    for fkLetters in FKset:
-        cmds.setAttr(fkLetters + 'Shape.overrideEnabled', 1)
-        cmds.setAttr(fkLetters  + 'Shape.overrideColor', 2)
-    
-    # setting up attrs
-    # attribute.addAttrTitleSperator()
-    attrSwitchName = attribute.addAttr(nodeName=mainCrv, attrName='IKFKswitch', attributeType='float',
-                                        min=0, max=1, defaultValue=0, enumName=None)
-
-    # create FK condition nodes
-    FKcondition = cmds.createNode('condition', n=f'{mainName}FK_condition')
-    cmds.setAttr(FKcondition  + '.secondTerm', 1)
-    cmds.setAttr(FKcondition  + '.colorIfTrueR', 14)
-    cmds.setAttr(FKcondition  + '.colorIfFalseR', 2)
-    cmds.connectAttr(attrSwitchName, FKcondition+'.firstTerm')
-    for fkLetters in FKset:
-        cmds.connectAttr(FKcondition+'.outColorR', fkLetters+'Shape.overrideColor')
-        
-    # create IK condition nodes
-    IKcondition = cmds.createNode('condition', n=f'{mainName}IK_condition')
-    cmds.setAttr(IKcondition  + '.secondTerm', 0)
-    cmds.setAttr(IKcondition  + '.colorIfTrueR', 14)
-    cmds.setAttr(IKcondition  + '.colorIfFalseR', 2)
-    cmds.connectAttr(attrSwitchName, IKcondition+'.firstTerm')
-    for ikLetters in IKset:
-        cmds.connectAttr(IKcondition+'.outColorR', ikLetters+'Shape.overrideColor')

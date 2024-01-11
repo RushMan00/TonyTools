@@ -15,8 +15,8 @@ class limbs():
                  name='arms',
                  guideList=['C_limbs%s_GDE' % i for i in range(3)],
                  addAttrsTo='C_global0_CNT',
-                 FKcontrolColor=22,
-                 IKcontrolColor=22,
+                 FKcontrolColor=None,
+                 IKcontrolColor=None,
                  FKcontrolSize=8,
                  IKcontrolSize=8,
                  parentControlTo=None,
@@ -37,6 +37,7 @@ class limbs():
         self.FKcontrolSize = FKcontrolSize
         self.IKcontrolSize = IKcontrolSize
         self.parentJointsTo = parentJointsTo
+        self.parentControlTo = parentControlTo
         self.primaryAxis = primaryAxis
         self.secondaryAxisOrient = secondaryAxisOrient
         self.tagJoints = tagJoints
@@ -134,7 +135,7 @@ class limbs():
                                     parentOrConst='const',
                                     adjGrpNumber=1,
                                     controlChain=True,
-                                    parentControlsTo='C_cog0_CNT',
+                                    parentControlsTo=self.parentControlTo,
                                     tag=True,
                                     )
         # creating IK Handle in IK Joint chain
@@ -143,20 +144,19 @@ class limbs():
                                  endEffector=IKLimbJoints[-1],
                                 #  solver=f"ik{self.name}Solver",
                                 )
-
         cmds.rename(ikHandle[1], self.ikName)
-        cmds.parent(ikHandle[0], self.mainRigGroup)
+        # cmds.parent(ikHandle[0], self.mainRigGroup)
         # cmds.parent(ikHandle[1], self.mainRigGroup)
         
-        # 
+        # create IK control
         IKcontrolName = ControlCurves.controlCurves(side=self.side,
                                                     name=self.name + 'Ik',
                                                     nodeList=[self.ikName],
                                                     shape='arrowoutward',
                                                     scale=self.IKcontrolSize,
                                                     color=self.IKcontrolColor,
-                                                    parentControlsTo=None,
-                                                    parentOrConst='parent',
+                                                    parentControlsTo=self.parentControlTo,
+                                                    parentOrConst='const',
                                                     controlChain = 1,
                                                     adjGrpNumber=2,
                                                     rotate=[0, 90, 0],
@@ -164,6 +164,24 @@ class limbs():
                                                     tag = True,
                                                     )
 
+        # create IK control
+        IKFKcontrolName = ControlCurves.controlCurves(side=self.side,
+                                                      name=self.name + 'Switch',
+                                                      nodeList=[self.ikName],
+                                                      shape='IKFK',
+                                                      scale=self.IKcontrolSize / 2,
+                                                      color=self.IKcontrolColor,
+                                                      parentControlsTo=IKcontrolName,
+                                                      parentOrConst='parent',
+                                                      controlChain = 1,
+                                                      adjGrpNumber=2,
+                                                      translate=[0, 10, 0],
+                                                      rotate=[0, 180, 0],
+                                                      lockHideAttrs = ['tx','ty','tz',
+                                                                       'rx','ry','rz',
+                                                                       'sx','sy','sz','v'],
+                                                      tag = True,
+                                                      )
         
     def __cleanUp(self):
         # # remove locatorGuides Group
