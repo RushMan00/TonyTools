@@ -121,7 +121,20 @@ class controlCurves():
             print('please rename the control')
         # checking sides
         self.color = Checker.checkingSides(side=self.side, color=self.color)
+        # making sure there is no double strings
+        # uniqueNodes = []
+        # for node in self.nodeList:
+        #     # Add the string to the unique list if it's not already there
+        #     if node not in uniqueNodes:
+        #         self.nodeList.append(node)
+        # # self.nodeList = uniqueNodes
+        
+        # print('__checking')
+        # print("printing self.nodeList")
+        # print(self.nodeList)
+        # print('__checking_____________')
 
+        
     def __chosingControls(self):
         if self.shape == 'acme':  # Done
             self.acmeControl()
@@ -150,8 +163,9 @@ class controlCurves():
         elif self.shape == 'IKFK':  #
             self.IKFKswitchPannel()
         else:
-            cmds.warning(" wrong shape string. please chose one of the following in shapes: /n "
-                            "circle | acme | pyramid | cube | god | square | arrowoutward | pinsquare | arrow")
+            cmds.warning("wrong shape string. please chose one of the following in shapes: /n "
+                         "circle | acme | pyramid | cube | god | square | arrowoutward | /n"
+                         "pinsquare | arrow | IKFK")
     
             
     def mergingCurves(self, name='name', curveList = ['curve1', 'curve2']):
@@ -167,7 +181,6 @@ class controlCurves():
 
     # ================================ THE CONTROL LIBRARY ================================
     # --- ACME CONTROL
-  
     def acmeControl(self):
         self.innerCountShape = 0
         """ACME usually for things to put any attrs or pramas for over all rig """
@@ -219,7 +232,6 @@ class controlCurves():
         self.controlNames = cmds.circle(name=self.fullName + "_" + self.CSN,
                                         nr=[0, 180, 0], r=1, s=8, ch=0)[0]
     # End of Circle CONTROL
-    
     def globalControl(self):
         crvNames =[]
         self.innerCountShape = 0
@@ -626,8 +638,6 @@ class controlCurves():
             cmds.setAttr(fkLetters  + 'Shape.overrideColor', 2)
         
         # setting up attrs
-        # attribute.addAttrTitleSperator()
-        print(self.controlNames)
         attrSwitchName = attribute.addAttr(nodeName=self.controlNames, attrName='IKFKswitch', attributeType='float',
                                             min=0, max=1, defaultValue=0, enumName=None)
 
@@ -654,13 +664,15 @@ class controlCurves():
 
     def __creatingSetup(self):
         # making controls for each iteration
+        print('x.x.x.x.x.x.x.x')
+        print(self.nodeList)
         for index, nodies in enumerate(self.nodeList):
             self.fullName = f'{self.fullName}{str(index)}'
              # creating controls
             self.__chosingControls()
             # creating main group
-            mainGrpName = cmds.group(self.controlNames, n=self.fullName + '_GRP')
-            self.mainGrpList.append(mainGrpName)
+            mainControlName = cmds.group(self.controlNames, n=self.fullName + '_GRP')
+            self.mainGrpList.append(mainControlName)
             # --- creating adj/buffer groups
             for i in range(self.adjGrpNumber):
                 grp = cmds.group(self.controlNames, n=self.fullName + "_" + 'Adj' + str(i) + '_GRP')
@@ -672,14 +684,15 @@ class controlCurves():
                     grp = cmds.group(self.controlNames, n=self.fullName + "_" + 'SubAdj' + str(i) + '_GRP')
                     self.adjGrpList.append(grp)
                 self.ControlList.append(self.controlNames)
-            
+            print(nodies)
             matrix = cmds.xform(nodies, query=True, matrix=True, worldSpace=True)
-            cmds.xform(mainGrpName, matrix=matrix, worldSpace=True)
+            cmds.xform(mainControlName, matrix=matrix, worldSpace=True)
             # END OF adj/buffer groups
+            
             if self.parentOrConst:
                 if self.parentOrConst == 'parent':
                     if self.parentControlsTo == str():
-                        cmds.parent(self.parentControlsTo, mainGrpName)
+                        cmds.parent(self.parentControlsTo, self.mainGrpList)
 
                 elif self.parentOrConst == 'const':
                     cmds.parentConstraint(self.controlNames, nodies, mo=1,

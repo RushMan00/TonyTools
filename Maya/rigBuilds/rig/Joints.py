@@ -70,17 +70,6 @@ def selectTaggedJoints():
     ListofObject = attribute.selectTags(tagName=tagName)
     return ListofObject
 
-def createJointChain(side='C',
-                     name='name',
-                     guideList=['C_spine%s_GDE' % i for i in range(5)],
-                     parent='SKELE',
-                     primaryAxis='xyz',
-                     secondaryAxisOrient = 'yup',
-                     orientJointEnd=True,
-                     deleteGuidesJoints=True,
-                     chain=True,
-                     tag=True,
-                     ):
     '''
     createJointChain() Function
 
@@ -110,36 +99,73 @@ def createJointChain(side='C',
     Date: 05/25/2023
     Version: 1.0.0
     '''
+def createJointChain(side='C',
+                     name='name',
+                     guideList=['C_spine%s_GDE' % i for i in range(5)],
+                     parent='SKELE',
+                     primaryAxis='xyz',
+                     secondaryAxisOrient = 'yup',
+                     orientJointEnd=True,
+                     deleteGuidesJoints=True,
+                     chain=True,
+                     tag=True,
+                     ):
     # vars
     fullName=f"{side}_{name}"
     jointList = []
-
-    for num, guideNd in enumerate(guideList):
+    jntName = str()
+    
+    # # Fix in case of there is more that one of the same string in the list
+    # # Loop through the original list
+    # for string in jointList:
+    #     # Add the string to the unique list if it's not already there
+    #     if string not in jointList:
+    #         jointList.append(string)
+    # print
+    # print()
+    
+    for num, guideName in enumerate(guideList):
         cmds.select(clear=True)
         # delete existing joint chain from scene
-        if deleteGuidesJoints:
-            jntName = guideNd.replace('_GDE', '_JNT')
-            if cmds.objExists(jntName):
-                cmds.delete(jntName)
+        # if deleteGuidesJoints:
+        #     guideName = guideName
+        #     guideName.replace('_GDE', '_JNT')
+        #     if cmds.objExists(jntName):
+        #         cmds.delete(jntName)
+        # cmds.delete(jntName)        
+        # print('____Joints____')
+        # print(jointList)
+        # print('____Joints____')
         # create joints
-        translation = cmds.getAttr(guideNd+".translate")[0]
-        rotation = cmds.getAttr(guideNd+".rotate")[0]
+        translation = cmds.getAttr(guideName+".translate")[0]
+        rotation = cmds.getAttr(guideName+".rotate")[0]
+        cmds.delete(guideName)    
+        # this is storing value as ['|C_cog0_JNT']
         jnt = cmds.joint(
                          n=f"{fullName}{num}_JNT",
                          p=translation,
                          o=rotation,
                          )
+        # quick fix 
+        if '|' in jnt:
+            jnt = jnt.lstrip('|')
         jointList.append(jnt)
 
         if chain and num > 0:
             # Parent each joint to the previous one, except for the first joint
             cmds.parent(jnt, jointList[num - 1])
 
+    print('____Joints____')
+    print(jointList)
+    print('____Joints____')
+    # make sure there
+    
     # If there's a parent specified and chain is False, parent the first joint to it
     if parent and not chain:
         cmds.parent(jointList[0], parent)
 
     # If there's a parent specified and chain is True, parent the whole chain
+        # print(jointList[0])
     elif parent and chain:
         cmds.parent(jointList[0], parent)
 
@@ -155,7 +181,6 @@ def createJointChain(side='C',
 
     if tag:
         tagAsJoints(jointList)
-
     return jointList
 
 def createJointsOnCurve(side='C',

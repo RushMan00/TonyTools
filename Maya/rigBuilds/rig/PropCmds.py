@@ -56,18 +56,31 @@ class propCmds():
         self.mainRigGroup = cmds.group(n=self.fullName + "Joints_GRP", em=1,
                                        parent=self.parentJointsTo)
         cmds.select(clear=True)
-
-        # create the joints
+        
+        # #checking
+        # # create the joints    # Fix in case of there is more that one of the same string in the list
+        # # Loop through the original list
+        # for string in self.guideList:
+        #     # Add the string to the unique list if it's not already there
+        #     if string not in self.guideList:
+        #         self.guideList.append(string)
+        
+        print('____PropCmds____')
+        print(self.guideList)
+        print('____PropCmds____')
+        
         self.jntList = Joints.createJointChain(side=self.side,
                                                name=self.name,
-                                               guideList=self.guideList,
+                                               guideList=self.jointList,
                                                parent=self.mainRigGroup,
                                                primaryAxis='xyz',
                                                orientJointEnd=True,
                                                chain=self.jointChain,
                                                tag=self.tagJoints,
                                                )
-        
+        # print('_+_+{+_+_+_+_+_}')
+        # print(self.jntList)
+        # print()
         self.controlList = ControlCurves.controlCurves(name=self.name,
                                                         side=self.side,
                                                         nodeList=self.jntList,
@@ -86,12 +99,12 @@ class propCmds():
         # remove locatorGuides Group
         cmds.delete(cmds.listRelatives(self.guideList[0], parent=True))
 
-    def getControlName(self):
+    def getAllControlNames(self):
         return self.controlList
 
     # --- returns
     def __str__(self):
-        return self.controlList
+        return self.controlList[-1]
 
     # def __repr__(self):
     #     return self.finishedGrpLst[-1]
